@@ -59,6 +59,7 @@ guardan en `test-results/`; la suite no modifica capturas versionadas.
 | El bridge de desarrollo podía preferir `.env.local` sobre un `BACKEND_URL` explícito del proceso.                     | Se dio prioridad al entorno del proceso para aislar las pruebas.                                    |
 | Playwright podía reutilizar un preview de otro modo y las E2E sobrescribían capturas de documentación.                | Cada ejecución inicia su preview y escribe capturas en `test-results/`.                             |
 | El fixture E2E no persistía favoritos y un selector QR encontraba dos enlaces.                                        | Fixture de favoritos con estado y selector exacto.                                                  |
+| En GitHub Actions la prueba GPS consultó `clearWatch` antes de terminar el cambio de ruta.                            | Se espera la URL de inicio y la limpieza asíncrona del seguimiento.                                 |
 | La auditoría inicial señaló cinco vulnerabilidades en dependencias, incluidas dos críticas de herramientas de prueba. | Vitest 5 y actualizaciones compatibles del lockfile; `npm audit` terminó con cero vulnerabilidades. |
 
 La compilación todavía avisa que `IndoorScene` pesa aproximadamente 621 KiB

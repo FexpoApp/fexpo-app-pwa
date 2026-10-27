@@ -349,7 +349,8 @@ test('GPS: permiso rechazado, cambio de planta y salida cancelan el watch', asyn
   await page.getByRole('button', { name: 'Mi ubicación', exact: true }).click();
   await gpsEmit(page);
   await page.getByRole('link', { name: 'Inicio', exact: true }).last().click();
-  expect(await page.evaluate(() => (window as any).__gpsCleared.length)).toBe(3);
+  await expect(page).toHaveURL('/');
+  await expect.poll(() => page.evaluate(() => (window as any).__gpsCleared.length)).toBe(3);
 });
 for (const width of [320, 390, 768, 1440])
   test(`entrada y NFC adaptados a ${width}px`, async ({ page }) => {
