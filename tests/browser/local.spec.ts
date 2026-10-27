@@ -182,6 +182,7 @@ test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page 
   await setup(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map');
   await page.getByRole('button', { name: '2D', exact: true }).click();
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
@@ -221,6 +222,7 @@ test('NFC del mapa conserva puntos y lleva al lote original', async ({ page }) =
   const api = await setup(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map');
   await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
   await emit(page);
@@ -274,6 +276,7 @@ test('sin WebGL se activa el plano original 2D', async ({ page }) => {
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map');
   await expect(page.getByRole('status')).toContainText('Vista 2D activada');
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
@@ -301,6 +304,7 @@ async function gpsSetup(page: Page) {
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map');
 }
 async function gpsEmit(page: Page, latitude = -16.5, accuracy = 4) {

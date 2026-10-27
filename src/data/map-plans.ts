@@ -1,10 +1,12 @@
 /**
- * Geometria vectorial de los planos de FIPAZ 2026 para el modo demo.
+ * Geometria vectorial original de los planos de FIPAZ 2026.
  *
  * PORTADO DE: fexpo-web-fe/src/features/map/data/fipaz2026Plans.ts (demo /demo/map).
  * Mismas coordenadas, mismo `viewBox`, mismas funciones `box`/`row`/`column`,
- * para que la app y la demo web dibujen el mismo recinto. Si Franco corrige un
- * plano alla, se copia el bloque aca. Geometria simplificada, no relevada.
+ * para que la app y la demo web dibujen el mismo recinto. Produccion solo usa
+ * esta maqueta cuando los planos publicados por el API coinciden exactamente.
+ * Si Franco corrige un plano alla, se copia el bloque aca. Geometria
+ * simplificada, no relevada.
  *
  * Unidades: las del `viewBox` de cada plano (como en el SVG de la web).
  */

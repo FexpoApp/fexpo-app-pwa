@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
 import { PLAN_LOTS, type PlanGeometry } from '@/data/map-plans';
-import { standAtLot, type PlanPosition } from './model';
+import { standAtLot, standAtLotIn, type PlanPosition } from './model';
+import type { Stand } from '@/types/domain';
 import type { CampusCamera } from './IndoorScene';
 function Controls({ cameraRef }: { cameraRef: React.RefObject<CampusCamera | null> }) {
   const c = useControls();
@@ -24,12 +25,14 @@ export default function IndoorPlan({
   selectedLot,
   onSelectLot,
   cameraRef,
+  stands,
 }: {
   plan: PlanGeometry;
   position: PlanPosition;
   selectedLot: number | null;
   onSelectLot: (index: number) => void;
   cameraRef: React.RefObject<CampusCamera | null>;
+  stands?: readonly Stand[];
 }) {
   return (
     <div className="indoor-plan">
@@ -55,7 +58,9 @@ export default function IndoorPlan({
               </g>
             ))}
             {PLAN_LOTS[plan.id].map(([code, x, y, w, h], index) => {
-              const stand = standAtLot(plan.id, code);
+              const stand = stands
+                ? standAtLotIn(stands, plan.id, code)
+                : standAtLot(plan.id, code);
               return (
                 <g
                   key={index}

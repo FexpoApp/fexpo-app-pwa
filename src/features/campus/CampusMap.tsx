@@ -18,12 +18,14 @@ import {
   Pause,
 } from 'lucide-react';
 import { STANDS } from '@/data/demo-data';
+import { LIVE } from '@/services/config';
+import { useLive } from '@/state/live';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '@/data/map-plans';
 import { CategoryTile, Modal } from '@/ui/components';
 import { nfcAvailable, readRawNfc } from '@/services/nfc';
 import { audioFeedback } from '@/features/audio/feedback';
 import { useCampusLocation } from './location';
-import { CAMPUS_POINTS, standAtLot } from './model';
+import { CAMPUS_POINTS, lotAtPublishedPosition, pointsForStands, standAtLotIn } from './model';
 import { useRelativeGps } from './gps';
 import IndoorPlan from './IndoorPlan';
 import type { CampusCamera } from './IndoorScene';
@@ -43,11 +45,37 @@ const buildings = [
 ];
 
 export default function CampusMap() {
+  const live = useLive();
+  const plans = LIVE
+    ? PLAN_GEOMETRY.filter((candidate) =>
+        live.map?.floors.some(
+          (floor) =>
+            floor.name === candidate.name &&
+            floor.outline === candidate.outline &&
+            floor.viewBox === candidate.viewBox,
+        ),
+      )
+    : PLAN_GEOMETRY;
+  const stands = LIVE
+    ? live.stands.map((stand) => {
+        const floor = live.map?.floors.find((floor) =>
+          floor.stands.some((item) => item.standId === stand.id),
+        );
+        const plan = plans.find((candidate) => candidate.name === floor?.name);
+        const published = floor?.stands.find((item) => item.standId === stand.id);
+        return {
+          ...stand,
+          planId: plan && published ? plan.id : '',
+          lotCode:
+            plan && published ? lotAtPublishedPosition(plan, published.x, published.y) : null,
+        };
+      })
+    : STANDS;
+  const points = LIVE ? pointsForStands(stands) : CAMPUS_POINTS;
   const [params, setParams] = useSearchParams();
-  const requestedStand = STANDS.find((s) => s.id === params.get('stand'));
+  const requestedStand = stands.find((s) => s.id === params.get('stand'));
   const plan =
-    PLAN_GEOMETRY.find((p) => p.id === (params.get('plan') || requestedStand?.planId)) ||
-    PLAN_GEOMETRY[0];
+    plans.find((p) => p.id === (params.get('plan') || requestedStand?.planId)) || plans[0];
   const mode = params.get('view') === '2d' || params.get('view') === 'plans' ? '2d' : '3d';
   const [query, setQuery] = useState(''),
     [selectedLot, setSelectedLot] = useState<number | null>(null);
@@ -63,12 +91,12 @@ export default function CampusMap() {
     abort = useRef<AbortController | null>(null);
   const last = useCampusLocation((s) => s.last),
     gps = useRelativeGps(plan.id);
-  const lastPoint = CAMPUS_POINTS.find((p) => p.id === last?.standId && p.planId === plan.id);
+  const lastPoint = points.find((p) => p.id === last?.standId && p.planId === plan.id);
   const position = gps.position || (lastPoint ? { x: lastPoint.x, y: lastPoint.y } : plan.origin);
   const lot = selectedLot !== null ? PLAN_LOTS[plan.id][selectedLot] : null;
-  const selectedStand = lot ? standAtLot(plan.id, lot[0]) : null;
-  const floors = PLAN_GEOMETRY.filter((p) => p.zoneId === plan.zoneId);
-  const results = STANDS.filter((s) =>
+  const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
+  const floors = plans.filter((p) => p.zoneId === plan.zoneId);
+  const results = stands.filter((s) =>
     norm(`${s.name} ${s.boothCode} ${s.tags.join(' ')}`).includes(norm(query)),
   );
   const [vx, vy, vw, vh] = plan.viewBox.split(' ').map(Number);
@@ -94,9 +122,11 @@ export default function CampusMap() {
     };
   }, []);
   useEffect(() => {
-    const stand = STANDS.find((s) => s.id === params.get('stand') && s.planId === plan.id);
+    const stand = stands.find((s) => s.id === params.get('stand') && s.planId === plan.id);
     const index = stand
-      ? PLAN_LOTS[plan.id].findIndex(([code]) => standAtLot(plan.id, code)?.id === stand.id)
+      ? PLAN_LOTS[plan.id].findIndex(
+          ([code]) => standAtLotIn(stands, plan.id, code)?.id === stand.id,
+        )
       : -1;
     setSelectedLot(index < 0 ? null : index);
     setAerial(false);
@@ -115,7 +145,7 @@ export default function CampusMap() {
     );
   };
   const select = (id: string) => {
-    const stand = STANDS.find((s) => s.id === id)!;
+    const stand = stands.find((s) => s.id === id)!;
     setQuery('');
     setListing(false);
     setFollow(false);
@@ -135,7 +165,7 @@ export default function CampusMap() {
       const reading = await readRawNfc(controller.signal);
       if (controller.signal.aborted) return;
       audioFeedback.request('nfcRead');
-      const id = useCampusLocation.getState().locate(reading.records);
+      const id = useCampusLocation.getState().locate(reading.records, points);
       gps.stop(true);
       select(id);
       setMessage('Última etiqueta localizada. Esta lectura no acredita puntos.');
@@ -204,15 +234,15 @@ export default function CampusMap() {
             <select
               aria-label="Pabellón"
               value={plan.zoneId}
-              onChange={(e) =>
-                changePlan(PLAN_GEOMETRY.find((p) => p.zoneId === e.target.value)!.id)
-              }
+              onChange={(e) => changePlan(plans.find((p) => p.zoneId === e.target.value)!.id)}
             >
-              {buildings.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
+              {buildings
+                .filter((b) => plans.some((p) => p.zoneId === b.id))
+                .map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name}
+                  </option>
+                ))}
             </select>
           </label>
           <div className="indoor-floor-tabs" aria-label="Planta">
@@ -265,6 +295,7 @@ export default function CampusMap() {
             selectedLot={selectedLot}
             onSelectLot={selectLot}
             cameraRef={camera}
+            stands={stands}
           />
         ) : (
           <Suspense
@@ -305,22 +336,24 @@ export default function CampusMap() {
                   {s.label}
                 </span>
               ))}
-            {CAMPUS_POINTS.filter((p) => p.planId === plan.id).map((p) => {
-              const s = STANDS.find((s) => s.id === p.id)!;
-              return (
-                <button
-                  className="indoor-marker"
-                  key={p.id}
-                  data-plan-x={p.x}
-                  data-plan-y={p.y}
-                  aria-label={`Ver ${s.name}, stand ${s.boothCode}`}
-                  onClick={() => select(p.id)}
-                >
-                  <Store size={16} />
-                  <span>{s.boothCode}</span>
-                </button>
-              );
-            })}
+            {points
+              .filter((p) => p.planId === plan.id)
+              .map((p) => {
+                const s = stands.find((s) => s.id === p.id)!;
+                return (
+                  <button
+                    className="indoor-marker"
+                    key={p.id}
+                    data-plan-x={p.x}
+                    data-plan-y={p.y}
+                    aria-label={`Ver ${s.name}, stand ${s.boothCode}`}
+                    onClick={() => select(p.id)}
+                  >
+                    <Store size={16} />
+                    <span>{s.boothCode}</span>
+                  </button>
+                );
+              })}
           </div>
         )}
         <div className="indoor-camera-top">
@@ -464,13 +497,13 @@ export default function CampusMap() {
       {listing && (
         <Modal title="Stands" onClose={() => setListing(false)}>
           <div className="indoor-stand-list">
-            {STANDS.map((s) => (
+            {stands.map((s) => (
               <button key={s.id} onClick={() => select(s.id)}>
                 <CategoryTile category={s.category} />
                 <span className="grow">
                   <strong>{s.name}</strong>
                   <small>
-                    {s.boothCode} · {PLAN_GEOMETRY.find((p) => p.id === s.planId)?.name}
+                    {s.boothCode} · {plans.find((p) => p.id === s.planId)?.name}
                   </small>
                 </span>
                 <ChevronRight size={18} />

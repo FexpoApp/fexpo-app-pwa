@@ -1,15 +1,15 @@
 import { create } from 'zustand';
-import { resolveCampusTag } from './model';
+import { resolveCampusTag, type CampusPoint } from './model';
 
 /** Session-only last tag location. Never retain the tag UID or its contents. */
 export const useCampusLocation = create<{
   last: { standId: string; at: string } | null;
-  locate: (records: readonly string[]) => string;
+  locate: (records: readonly string[], points?: CampusPoint[]) => string;
   clear: () => void;
 }>((set) => ({
   last: null,
-  locate(records) {
-    const point = resolveCampusTag(records);
+  locate(records, points) {
+    const point = resolveCampusTag(records, points);
     set({ last: { standId: point.id, at: new Date().toISOString() } });
     return point.id;
   },

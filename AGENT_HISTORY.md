@@ -117,3 +117,17 @@ hay cambios que se perdieron (el mas importante el mapa 3d de stands), los commi
 
 **Salida:**
 Se rastrearon los commits de Omar: 75d46d3 agregó el visor 3D y 2001b39 lo conectó a /map, pero la condición LIVE de src/pages/Map.tsx enviaba producción a LiveMap 2D; el código no fue borrado. Se recuperó el 3D para live mediante src/features/campus/live-plan.ts, adaptando las siete plantas y stands publicados por el API al IndoorScene original; la vista 2D sigue disponible y WebGL fallido vuelve a 2D. Se corrigieron las coordenadas SVG de etiquetas de estructuras en LiveMap y su contrato. Se editaron IndoorScene.tsx, campus.css, LiveMap.tsx, src/types/api.ts, tests/browser/live.spec.ts y docs/PWA_E2E_CI.md. Typecheck, 29 unitarias, E2E live 21/21, E2E local 18/18, build live/local y Prettier correctos. Preview local con GET público del mapa real: siete plantas cargadas, 23 stands coinciden con el API y cero errores JS. Se preservaron pnpm-lock.yaml y pnpm-workspace.yaml locales sin versionar. Se hizo commit y push a main; GitHub Actions y despliegue quedan sujetos a verificación posterior.
+
+### 2026-10-27T15:58:55Z | usuario: saulchoque <saulchoque123@gmail.com> | agente: Codex (GPT-6 Sol)
+**Prompt:**
+genial, pero la version a la que quiero regresar es la que se muestra en la imagen '/home/saul-bms/9937a8fe-8357-42cd-82b1-32f26c831e4d.jpeg'
+
+**Salida:**
+Se inspeccionó la imagen aportada y se identificó el CampusMap original de Omar, no solo el motor IndoorScene: 51 espacios del Bloque Rojo, selector de bloque/planta, cámara, avatar, marcadores, barra de estado y controles 2D/3D/NFC/GPS. Se conectó la ruta /map en live a ese componente cuando el mapa publicado coincide con sus siete planos; se conserva LiveMap como fallback. Una captura móvil del preview con el API real reprodujo esos elementos y no mostró errores JS.
+
+### 2026-10-27T16:01:17Z | usuario: saulchoque <saulchoque123@gmail.com> | agente: Codex (GPT-6 Sol)
+**Prompt:**
+genial, usa TODOS los elementos visuales correspondientes a esa version de Omar y traelos a main
+
+**Salida:**
+Se mantuvieron íntegros los elementos visuales originales de Omar (geometría PLAN_LOTS, IndoorScene, IndoorPlan, campus.css, barra, paneles, controles, colores y avatar) y se conectaron a producción en CampusMap/Map.tsx. Se asignaron stands reales por coordenadas del API, incluso cuando el código comercial difiere del número del plano; 23/23 marcadores en siete plantas y selección/NFC sin atribuir puntos. Se corrigió la carrera de cuatro E2E local en GitHub Actions esperando que termine la entrada de prueba. Tests: 30 unitarias, typecheck, builds demo/local/live, 15/15 E2E demo, 18/18 local y 21/21 live; preview real sin errores. docs/PWA_E2E_CI.md y pruebas actualizadas; pnpm locales sin versionar preservados. Se hizo commit y push a main, seguidos de verificación de CI y Vercel.

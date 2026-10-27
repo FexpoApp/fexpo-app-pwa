@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
 const eventId = 'e0000000-0000-4000-8000-000000000001';
 const standId = '5a000000-0000-4000-8000-000000000001';
 const secondId = '5a000000-0000-4000-8000-000000000002';
@@ -570,26 +571,82 @@ test('mapa, ranking y QR personal usan datos del servidor', async ({ page }) => 
 test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha real', async ({
   page,
 }) => {
-  await setup(page);
+  const checkins = await setup(page);
+  const plan = PLAN_GEOMETRY[0];
+  const lot = PLAN_LOTS[plan.id].find(([code]) => Number(code) === 1)!;
+  await page.route('**/api/backend?*', async (route) => {
+    if (new URL(route.request().url()).searchParams.get('path') !== `/events/${eventId}/map`)
+      return route.fallback();
+    await route.fulfill({
+      json: {
+        success: true,
+        data: {
+          version: 1,
+          floors: [
+            {
+              id: floorId,
+              code: 'R-PB',
+              name: plan.name,
+              levelLabel: plan.level,
+              viewBox: plan.viewBox,
+              outline: plan.outline,
+              svgUrl: null,
+              zones: [],
+              pois: [],
+              structures: plan.structures.map((item, index) => ({
+                id: `area-${index}`,
+                kind: 'area',
+                path: item.path,
+                label: item.label || null,
+                labelX: item.x ?? null,
+                labelY: item.y ?? null,
+              })),
+              stands: [
+                {
+                  standId,
+                  displayName: 'Café Altiplano',
+                  boothCode: 'A-01',
+                  x: (lot[1] + lot[3] / 2) / 800,
+                  y: (lot[2] + lot[4] / 2 - 90) / 630,
+                  width: lot[3] / 800,
+                  height: lot[4] / 630,
+                  rotation: 0,
+                  categories: [],
+                },
+              ],
+            },
+          ],
+        },
+      },
+    });
+  });
   await page.goto('/map');
+  await expect(page.getByRole('region', { name: 'Mapa interactivo FIPAZ' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Pabellón' })).toHaveValue('red');
+  await expect(page.getByRole('button', { name: 'Baja', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expect(page.getByRole('button', { name: '3D', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', floorId);
-  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '1');
+  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', plan.id);
+  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '51');
+  await expect(page.getByRole('button', { name: 'Girar mapa' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /Ver Café Altiplano, stand A-01/ })).toBeVisible();
   await expect(page.getByText('Altura Labs', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '2D', exact: true }).click();
-  await expect(page.locator('.floor-svg')).toBeVisible();
-  await expect(page.locator('.floor-svg text').filter({ hasText: 'Ingreso' })).toHaveAttribute(
-    'x',
-    '500',
-  );
+  await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
+  await expect(page.locator('.indoor-svg [data-lot]')).toHaveCount(51);
   await page.getByRole('button', { name: '3D', exact: true }).click();
   await page.goto(`/map?stand=${standId}&view=3d`);
-  await expect(page.locator('.live-indoor-viewer')).toBeVisible();
-  await expect(page.locator('.selected-map-stand')).toContainText('Café Altiplano');
-  await page.locator('.selected-map-stand').click();
+  await expect(page.getByRole('heading', { name: 'Café Altiplano' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
+  await emitNfc(page);
+  await expect(page.locator('.map-message')).toContainText('no acredita puntos');
+  expect(checkins).toHaveLength(0);
+  await page.getByRole('link', { name: 'Ver perfil', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/stands/${standId}$`));
 });
 test('invitados y enlaces inválidos no acreditan visitas ni muestran QR privado', async ({
