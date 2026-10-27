@@ -229,7 +229,16 @@ async function setup(page: Page, guest = false, failCatalog = false) {
             viewBox: '0 0 1000 600',
             outline: 'M0 0H1000V600H0Z',
             svgUrl: null,
-            structures: [],
+            structures: [
+              {
+                id: 'entry',
+                kind: 'area',
+                path: 'M450 260H550V340H450Z',
+                label: 'Ingreso',
+                labelX: 500,
+                labelY: 300,
+              },
+            ],
             zones: [],
             pois: [],
             stands: [
@@ -557,6 +566,31 @@ test('mapa, ranking y QR personal usan datos del servidor', async ({ page }) => 
   await page.getByRole('button', { name: 'Actualizar QR' }).click();
   await refresh;
   await expect(page.getByRole('img', { name: 'Tu QR personal de Fexpo' })).toBeVisible();
+});
+test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha real', async ({
+  page,
+}) => {
+  await setup(page);
+  await page.goto('/map');
+  await expect(page.getByRole('button', { name: '3D', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', floorId);
+  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '1');
+  await expect(page.getByText('Altura Labs', { exact: true })).toHaveCount(0);
+  await page.getByRole('button', { name: '2D', exact: true }).click();
+  await expect(page.locator('.floor-svg')).toBeVisible();
+  await expect(page.locator('.floor-svg text').filter({ hasText: 'Ingreso' })).toHaveAttribute(
+    'x',
+    '500',
+  );
+  await page.getByRole('button', { name: '3D', exact: true }).click();
+  await page.goto(`/map?stand=${standId}&view=3d`);
+  await expect(page.locator('.live-indoor-viewer')).toBeVisible();
+  await expect(page.locator('.selected-map-stand')).toContainText('Café Altiplano');
+  await page.locator('.selected-map-stand').click();
+  await expect(page).toHaveURL(new RegExp(`/stands/${standId}$`));
 });
 test('invitados y enlaces inválidos no acreditan visitas ni muestran QR privado', async ({
   page,

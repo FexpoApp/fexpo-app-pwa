@@ -131,7 +131,15 @@ export interface ListStandsParams {
 //    map_pois). La app los convierte: X = minX + x * ancho.
 
 export type PoiType =
-  'entrance' | 'exit' | 'toilet' | 'food' | 'stage' | 'info' | 'health' | 'parking' | 'other';
+  | 'entrance'
+  | 'exit'
+  | 'toilet'
+  | 'food'
+  | 'stage'
+  | 'info'
+  | 'health'
+  | 'parking'
+  | 'other';
 
 export interface MapZoneDto {
   id: string;
@@ -157,6 +165,7 @@ export interface MapStructureDto {
   /** Path SVG en unidades del viewBox. */
   path: string;
   label: string | null;
+  /** Etiquetas en unidades SVG del viewBox del piso. */
   labelX: number | null;
   labelY: number | null;
 }

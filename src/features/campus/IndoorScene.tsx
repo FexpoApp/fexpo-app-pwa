@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-import { PLAN_LOTS, type PlanGeometry } from '@/data/map-plans';
+import { PLAN_LOTS, type Lot, type PlanGeometry } from '@/data/map-plans';
 import { toWorld, WORLD_SCALE, type PlanPosition } from './model';
 export interface CampusCamera {
   zoom: (factor: number) => void;
@@ -12,6 +12,8 @@ export interface CampusCamera {
 }
 interface Props {
   plan: PlanGeometry;
+  lots?: Lot[];
+  showAvatar?: boolean;
   dark: boolean;
   aerial: boolean;
   position: PlanPosition;
@@ -35,7 +37,7 @@ export default function IndoorScene(props: Props) {
       return;
     }
     const { plan, dark } = props,
-      lots = PLAN_LOTS[plan.id];
+      lots = props.lots ?? PLAN_LOTS[plan.id];
     const [vx, vy, vw, vh] = plan.viewBox.split(' ').map(Number);
     renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
     renderer.setClearColor(dark ? '#101012' : '#eef3f8');
@@ -138,7 +140,7 @@ export default function IndoorScene(props: Props) {
     shapeFrom(plan.outline, 0.12, floor);
     for (const s of plan.structures) shapeFrom(s.path, 0.38, grey);
     const names = [...lots.map((l) => String(l[0])), ...plan.structures.map((s) => s.label || '')];
-    const grid = Math.ceil(Math.sqrt(names.length)),
+    const grid = Math.max(1, Math.ceil(Math.sqrt(names.length))),
       cell = 128,
       atlas = document.createElement('canvas');
     atlas.width = atlas.height = grid * cell;
@@ -214,6 +216,7 @@ export default function IndoorScene(props: Props) {
     const highlight = new THREE.LineLoop(highlightGeo, highlightMaterial);
     scene.add(highlight);
     const avatar = new THREE.Group();
+    avatar.visible = props.showAvatar !== false;
     scene.add(avatar);
     const skin = mat('#efc09a'),
       blue = mat('#168bd4'),

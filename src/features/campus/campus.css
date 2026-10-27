@@ -9,6 +9,32 @@
   display: flex;
   flex-direction: column;
 }
+.live-map-modes {
+  display: flex;
+  width: fit-content;
+  padding: 3px;
+  gap: 3px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.live-map-modes button {
+  min-width: 52px;
+  min-height: 35px;
+  border-radius: 7px;
+  font-weight: 700;
+}
+.live-map-modes button[aria-pressed='true'] {
+  color: white;
+  background: var(--blue);
+}
+.live-indoor-viewer {
+  width: 100%;
+  height: min(60vh, 520px);
+  min-height: 340px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+}
 .indoor-toolbar {
   padding: 10px 14px 7px;
   background: var(--surface);
