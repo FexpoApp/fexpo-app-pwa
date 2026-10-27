@@ -124,3 +124,45 @@ test('la PWA abre rutas y recursos offline después de la primera carga', async 
   ).toBe(0);
   await context.setOffline(false);
 });
+test('perfil demo conserva nombre, apariencia, preferencias y pase al recargar', async ({
+  page,
+}) => {
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Editar perfil demo' }).click();
+  await page.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Visitante QA');
+  await page.getByRole('button', { name: 'Guardar perfil demo' }).click();
+  await expect(page.getByText('Visitante QA', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Oscuro', exact: true }).click();
+  await page.getByRole('switch', { name: /Sonidos/ }).click();
+  await page.reload();
+  await expect(page.getByText('Visitante QA', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Oscuro', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('switch', { name: /Sonidos/ })).toHaveAttribute(
+    'aria-checked',
+    'false',
+  );
+  await page.getByRole('link', { name: 'Mi código QR', exact: true }).click();
+  await expect(page.getByText('Visitante QA', { exact: true })).toBeVisible();
+  await expect(page.getByText('CÓDIGO DE DEMOSTRACIÓN')).toBeVisible();
+});
+test('avisos y recompensas demo se pueden consultar y reiniciar', async ({ page }) => {
+  await page.goto('/rewards');
+  await page.getByRole('button', { name: /Cafe de cortesia/ }).click();
+  await expect(page.getByRole('button', { name: /Te faltan/ })).toBeDisabled();
+  await page.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await page.goto('/scan?stand=stand-kawsay-salud');
+  await page.getByRole('button', { name: 'Simular lectura NFC', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: '¡Una nueva conexión!' })).toBeVisible();
+  await page.getByRole('button', { name: 'Listo', exact: true }).click();
+  await page.goto('/notifications');
+  await expect(page.getByText('Kawsay Salud · +50 puntos de demostración.')).toBeVisible();
+  await page.getByRole('button', { name: 'Borrar avisos' }).click();
+  await expect(page.getByText('Tu próxima aventura te espera')).toBeVisible();
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Reiniciar recorrido demo' }).click();
+  await page.getByRole('button', { name: 'Reiniciar demo' }).click();
+  await expect(page.getByText('Tu primera parada te espera')).toBeVisible();
+});

@@ -59,3 +59,11 @@ Misiones/canjes reales, catálogo de productos con precios, logos/redes y notifi
 - [Web NFC en Chrome](https://developer.chrome.com/docs/capabilities/nfc)
 - [Botón oficial de Google Identity Services](https://developers.google.com/identity/gsi/web/guides/display-button)
 - [Vibration API](https://developer.mozilla.org/en-US/docs/Web/API/Vibration_API)
+
+## Integración live: sesión, perfil, ranking y actividades
+
+Rutas que el bridge (`server/bridge.mjs`) deja pasar hacia Nest, además de las anteriores: `GET/PATCH /me/profile`, `GET /events/:id/leaderboard` y `POST /activities/:id/register`. El resto sigue bloqueado.
+
+Para probar contra un backend real: `BACKEND_URL` (solo servidor), `VITE_EVENT_ID` (UUID que exista en ese backend), `VITE_GOOGLE_CLIENT_ID` y `npm run build:live`. El origen de la PWA (HTTPS y `localhost:4174/5174`) debe estar autorizado como origen de JavaScript en el cliente Web de Google Cloud; sin eso Google responde `origin_mismatch`.
+
+Pendiente de backend: canje de premios, misiones/premios visibles para el visitante, fuente real de avisos y `GET /events/:id` (backend #26).

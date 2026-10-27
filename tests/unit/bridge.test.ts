@@ -71,4 +71,60 @@ describe('Bridge de sesión y rutas permitidas', () => {
     expect((await call('/api/session/refresh', 'POST')).statusCode).toBe(401);
     expect(fetcher).not.toHaveBeenCalled();
   });
+  it('permite perfil, ranking y registro a actividades con el método correcto', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ success: true, data: {} })));
+    vi.stubGlobal('fetch', fetcher);
+    const event = '11111111-1111-4111-8111-111111111111';
+    const activity = '22222222-2222-4222-8222-222222222222';
+    expect((await call(`/api/backend?path=${encodeURIComponent('/me/profile')}`)).statusCode).toBe(
+      200,
+    );
+    expect(
+      (
+        await call(`/api/backend?path=${encodeURIComponent('/me/profile')}`, 'PATCH', {
+          displayName: 'Luis',
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await call(
+          `/api/backend?path=${encodeURIComponent(`/events/${event}/leaderboard?limit=10`)}`,
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await call(
+          `/api/backend?path=${encodeURIComponent(`/activities/${activity}/register`)}`,
+          'POST',
+          {},
+        )
+      ).statusCode,
+    ).toBe(200);
+    // Métodos no permitidos y escrituras sobre rutas de solo lectura.
+    expect(
+      (await call(`/api/backend?path=${encodeURIComponent('/me/profile')}`, 'DELETE', {}))
+        .statusCode,
+    ).toBe(405);
+    expect(
+      (
+        await call(
+          `/api/backend?path=${encodeURIComponent(`/events/${event}/leaderboard`)}`,
+          'POST',
+          {},
+        )
+      ).statusCode,
+    ).toBe(405);
+    expect(
+      (
+        await call(
+          `/api/backend?path=${encodeURIComponent(`/activities/${activity}/attendance`)}`,
+          'POST',
+          {},
+        )
+      ).statusCode,
+    ).toBe(404);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+  });
 });

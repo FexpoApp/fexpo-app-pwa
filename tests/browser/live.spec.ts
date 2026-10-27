@@ -33,7 +33,9 @@ const stands = [
 ];
 async function setup(page: Page, guest = false, failCatalog = false) {
   let signedIn = !guest;
+  let displayName = 'Ana Visitante';
   let visited = false;
+  const favoriteIds = new Set<string>();
   const checkins: Record<string, unknown>[] = [];
   await page.addInitScript(() => {
     const w = window as unknown as Record<string, any>;
@@ -108,7 +110,7 @@ async function setup(page: Page, guest = false, failCatalog = false) {
         data: {
           accessToken: 'test-access-only',
           expiresIn: 900,
-          user: { id: 'test-user', displayName: 'Ana Visitante', avatarUrl: null },
+          user: { id: 'test-user', displayName, avatarUrl: null },
         },
         meta: null,
       },
@@ -127,9 +129,20 @@ async function setup(page: Page, guest = false, failCatalog = false) {
       return;
     }
     let data: unknown = [];
-    if (path === '/auth/me')
-      data = { id: 'test-user', profile: { displayName: 'Ana Visitante', avatarUrl: null } };
-    else if (path.includes('/check-ins')) {
+    if (path === '/auth/me') data = { id: 'test-user', profile: { displayName, avatarUrl: null } };
+    else if (path === '/me/profile') {
+      if (route.request().method() === 'PATCH')
+        displayName = route.request().postDataJSON().displayName;
+      data = {
+        id: 'test-user',
+        displayName,
+        fullName: null,
+        avatarUrl: null,
+        phone: null,
+        bio: null,
+        locale: null,
+      };
+    } else if (path.includes('/check-ins')) {
       checkins.push(route.request().postDataJSON());
       visited = true;
       data = {
@@ -160,7 +173,13 @@ async function setup(page: Page, guest = false, failCatalog = false) {
             },
           ]
         : [];
-    else if (path.endsWith('/streak')) data = { currentStreak: 2, bestStreak: 3, days: [] };
+    else if (path.endsWith('/favorites')) data = [...favoriteIds].map((id) => ({ standId: id }));
+    else if (path.endsWith('/favorite')) {
+      const id = path.split('/')[2];
+      if (route.request().method() === 'POST') favoriteIds.add(id);
+      else favoriteIds.delete(id);
+      data = null;
+    } else if (path.endsWith('/streak')) data = { currentStreak: 2, bestStreak: 3, days: [] };
     else if (path.startsWith('/me/qr'))
       data = {
         qrId: 'qr1',
@@ -168,6 +187,34 @@ async function setup(page: Page, guest = false, failCatalog = false) {
         token: 'test-personal-qr-issued-by-server',
         issuedAt: new Date().toISOString(),
       };
+    else if (path.includes('/activities?'))
+      data = [
+        {
+          id: 'ac000000-0000-4000-8000-000000000001',
+          title: 'Taller de café',
+          description: 'Aprende sobre café de altura',
+          startsAt: null,
+          endsAt: null,
+          status: 'published',
+        },
+      ];
+    else if (path.startsWith('/activities/') && path.endsWith('/register'))
+      data = {
+        id: 'at000000-0000-4000-8000-000000000001',
+        activityId: 'ac000000-0000-4000-8000-000000000001',
+        status: 'registered',
+      };
+    else if (path.includes('/leaderboard?'))
+      data = [
+        {
+          position: 1,
+          userId: 'test-user',
+          displayName,
+          avatarUrl: null,
+          rankingScore: 42,
+          level: 2,
+        },
+      ];
     else if (path.startsWith(`/events/${eventId}/stands`)) data = stands;
     else if (path === `/stands/${standId}`) data = stands[0];
     else if (path.endsWith('/map'))
@@ -402,6 +449,131 @@ test('audio offline válido y ausencia de caché de API privada', async ({ page,
   expect(report.clips.every((clip) => clip.status === 200 && clip.duration > 0)).toBe(true);
   await context.setOffline(false);
 });
+test('catálogo, filtros y favoritos muestran solo los stands elegidos', async ({ page }) => {
+  await setup(page);
+  await page.goto('/stands');
+  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toBeVisible();
+  await page.getByRole('button', { name: 'Gastronomía' }).click();
+  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Todos' }).click();
+  await page.getByRole('link', { name: /Café Altiplano/ }).click();
+  await page.getByRole('button', { name: 'Guardar stand' }).click();
+  await page.goto('/stands');
+  await page.getByRole('button', { name: 'Mostrar solo favoritos' }).click();
+  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toHaveCount(0);
+});
+test('editar el nombre valida, guarda y persiste al recargar', async ({ page }) => {
+  await setup(page);
+  await page.goto('/profile');
+  await expect(page.getByText('Ana Visitante', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Editar mi nombre' }).click();
+  await page.getByRole('textbox', { name: 'Nombre visible' }).fill('   ');
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await expect(page.getByRole('alert')).toContainText('Escribe un nombre');
+  await page.getByRole('textbox', { name: 'Nombre visible' }).fill('  Ana QA  ');
+  const patch = page.waitForRequest(
+    (r) => r.method() === 'PATCH' && new URL(r.url()).searchParams.get('path') === '/me/profile',
+  );
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  expect((await patch).postDataJSON()).toEqual({ displayName: 'Ana QA' });
+  await expect(page.getByText('Ana QA', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.getByText('Ana QA', { exact: true })).toBeVisible();
+});
+test('inscripción en actividad informa errores y permite reintentar', async ({ page }) => {
+  await setup(page);
+  let failed = false;
+  await page.route('**/api/backend?*', async (route) => {
+    const path = new URL(route.request().url()).searchParams.get('path') || '';
+    if (!failed && path.endsWith('/register') && route.request().method() === 'POST') {
+      failed = true;
+      await route.fulfill({
+        status: 503,
+        json: {
+          success: false,
+          error: { code: 'UPSTREAM_UNAVAILABLE', message: 'Inténtalo de nuevo.' },
+        },
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto('/stands/' + standId);
+  await page.getByRole('tab', { name: 'Dinámicas' }).click();
+  await expect(page.getByRole('heading', { name: 'Taller de café' })).toBeVisible();
+  await page.getByRole('button', { name: 'Inscribirme' }).click();
+  await expect(page.getByRole('alert')).toContainText('Inténtalo de nuevo');
+  const registration = page.waitForRequest(
+    (r) =>
+      r.method() === 'POST' &&
+      new URL(r.url()).searchParams.get('path')?.endsWith('/register') === true,
+  );
+  await page.getByRole('button', { name: 'Inscribirme' }).click();
+  await registration;
+  await expect(page.getByRole('button', { name: 'Inscripción confirmada' })).toBeDisabled();
+});
+test('la caída del catálogo de actividades se muestra y permite reintentar', async ({ page }) => {
+  await setup(page);
+  let failed = false;
+  await page.route('**/api/backend?*', async (route) => {
+    const path = new URL(route.request().url()).searchParams.get('path') || '';
+    if (!failed && path.includes('/activities?')) {
+      failed = true;
+      await route.fulfill({
+        status: 503,
+        json: {
+          success: false,
+          error: { code: 'UPSTREAM_UNAVAILABLE', message: 'Actividades no disponibles.' },
+        },
+      });
+      return;
+    }
+    await route.fallback();
+  });
+  await page.goto('/stands/' + standId);
+  await page.getByRole('tab', { name: 'Dinámicas' }).click();
+  await expect(page.getByRole('alert')).toContainText('Actividades no disponibles');
+  await page.getByRole('button', { name: 'Reintentar actividades' }).click();
+  await expect(page.getByRole('heading', { name: 'Taller de café' })).toBeVisible();
+});
+test('mapa, ranking y QR personal usan datos del servidor', async ({ page }) => {
+  await setup(page);
+  await page.goto('/map');
+  await page.getByRole('textbox', { name: 'Buscar stands y empresas' }).fill('tecno');
+  await expect(page.locator('.stand-result').filter({ hasText: 'TecnoAndes' })).toBeVisible();
+  await expect(page.locator('.stand-result').filter({ hasText: 'Café Altiplano' })).toHaveCount(0);
+  await page.goto('/missions');
+  await expect(page.getByRole('list', { name: 'Ranking del evento' })).toContainText(
+    'Ana Visitante',
+  );
+  await page.goto('/my-qr');
+  await expect(page.getByRole('img', { name: 'Tu QR personal de Fexpo' })).toBeVisible();
+  const refresh = page.waitForRequest(
+    (r) => new URL(r.url()).searchParams.get('path')?.startsWith('/me/qr?') === true,
+  );
+  await page.getByRole('button', { name: 'Actualizar QR' }).click();
+  await refresh;
+  await expect(page.getByRole('img', { name: 'Tu QR personal de Fexpo' })).toBeVisible();
+});
+test('invitados y enlaces inválidos no acreditan visitas ni muestran QR privado', async ({
+  page,
+}) => {
+  const requests = await setup(page, true);
+  await page.goto('/my-qr');
+  await expect(page.getByRole('link', { name: 'Acceder con Google' })).toBeVisible();
+  await page.goto('/scan');
+  await expect(
+    page.getByRole('link', { name: 'Acceder con Google para registrar visitas' }),
+  ).toBeVisible();
+  await page.goto('/e/otra-feria/s/' + standId);
+  await expect(page.getByText('Esta tarjeta pertenece a otra feria')).toBeVisible();
+  await page.goto('/stands/id-no-valido');
+  await expect(page.getByText('El identificador del stand no es válido.')).toBeVisible();
+  expect(requests).toHaveLength(0);
+});
 for (const width of [320, 390, 1440])
   for (const theme of ['light', 'dark'])
     test(`interfaz conectada sin desbordamiento ${theme} ${width}`, async ({ page }) => {
@@ -443,13 +615,13 @@ for (const width of [320, 390, 1440])
         ) {
           await expect(page.locator('.app-header .points-pill')).toHaveText('17');
           await page.screenshot({
-            path: `docs/screenshots/integration/${theme}-${path === '/' ? 'home' : path.startsWith('/stands/') ? 'stand' : path.slice(1)}.png`,
+            path: `test-results/screenshots/integration/${theme}-${path === '/' ? 'home' : path.startsWith('/stands/') ? 'stand' : path.slice(1)}.png`,
             fullPage: true,
           });
         }
         if (width === 1440 && path === '/profile')
           await page.screenshot({
-            path: `docs/screenshots/integration/${theme}-desktop.png`,
+            path: `test-results/screenshots/integration/${theme}-desktop.png`,
             fullPage: true,
           });
       }

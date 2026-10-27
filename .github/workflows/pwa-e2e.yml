@@ -1,0 +1,85 @@
+name: PWA checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/pwa-e2e.yml'
+      - 'src/**'
+      - 'server/**'
+      - 'tests/**'
+      - 'scripts/build-mode.mjs'
+      - 'scripts/test-e2e.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.ts'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'tsconfig*.json'
+      - 'public/**'
+      - 'index.html'
+  pull_request:
+    paths:
+      - '.github/workflows/pwa-e2e.yml'
+      - 'src/**'
+      - 'server/**'
+      - 'tests/**'
+      - 'scripts/build-mode.mjs'
+      - 'scripts/test-e2e.mjs'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'playwright.config.ts'
+      - 'vite.config.ts'
+      - 'vitest.config.ts'
+      - 'tsconfig*.json'
+      - 'public/**'
+      - 'index.html'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm audit --audit-level=high
+
+  browser:
+    needs: unit
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [demo, local, live]
+    env:
+      BACKEND_URL: http://127.0.0.1:9
+      VITE_EVENT_ID: e0000000-0000-4000-8000-000000000001
+      VITE_GOOGLE_CLIENT_ID: 492704011109-3479bq36uucvnqlsjrlfatur1fb3kjhu.apps.googleusercontent.com
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: npm run build:${{ matrix.mode }}
+      - run: npm run test:e2e:${{ matrix.mode }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-${{ matrix.mode }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 7

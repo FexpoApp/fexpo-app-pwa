@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import QRCode from 'react-qr-code';
 import { Bell, Gift, LogOut, Monitor, Moon, QrCode, RefreshCw, Store, Sun } from 'lucide-react';
 import { useLive, loadQr, message, syncProgress, flushPending } from '@/state/live';
+import { request } from '@/services/api';
+import { EVENT_ID, eventReady } from '@/services/config';
+import type { LeaderboardEntryDto, ProfileDto } from '@/types/api';
 import { Art, Empty, MenuLink, Modal, Pill, Progress, SectionTitle } from '@/ui/components';
 import { GoogleLogin } from '@/ui/GoogleLogin';
 import { useTheme } from '@/ui/theme';
@@ -13,6 +16,30 @@ export function LiveProfile() {
   const { mode, setMode } = useTheme();
   const [closing, setClosing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState('');
+  const [saveError, setSaveError] = useState('');
+  async function saveName() {
+    const displayName = name.trim();
+    if (!displayName) return setSaveError('Escribe un nombre.');
+    setBusy(true);
+    setSaveError('');
+    try {
+      const { data } = await request<ProfileDto>('/me/profile', {
+        method: 'PATCH',
+        body: { displayName },
+        auth: true,
+      });
+      useLive.setState((v) => ({
+        user: v.user ? { ...v.user, displayName: data.displayName } : v.user,
+      }));
+      setEditing(false);
+    } catch (e) {
+      setSaveError(message(e));
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <div className="stack profile-page">
       <div className="profile-identity">
@@ -53,6 +80,16 @@ export function LiveProfile() {
               </span>
             </div>
           </div>
+          <button
+            className="button secondary"
+            onClick={() => {
+              setName(s.user?.displayName || '');
+              setSaveError('');
+              setEditing(true);
+            }}
+          >
+            Editar mi nombre
+          </button>
           <MenuLink
             to="/my-qr"
             icon={QrCode}
@@ -180,6 +217,28 @@ export function LiveProfile() {
           </button>
         </Modal>
       )}
+      {editing && (
+        <Modal
+          title="Editar mi nombre"
+          onClose={() => {
+            if (!busy) setEditing(false);
+          }}
+        >
+          <label className="stack">
+            Nombre visible
+            <input
+              value={name}
+              maxLength={120}
+              autoFocus
+              onChange={(event) => setName(event.target.value)}
+            />
+          </label>
+          {saveError && <p role="alert">{saveError}</p>}
+          <button className="button" disabled={busy} onClick={() => void saveName()}>
+            {busy ? 'Guardando…' : 'Guardar'}
+          </button>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -255,6 +314,45 @@ export function LiveQr() {
     </div>
   );
 }
+function Ranking() {
+  const s = useLive();
+  const [rows, setRows] = useState<LeaderboardEntryDto[] | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!eventReady) return;
+    let active = true;
+    request<LeaderboardEntryDto[]>(`/events/${EVENT_ID}/leaderboard?limit=10`)
+      .then((r) => active && setRows(r.data))
+      .catch((e) => active && setError(message(e)));
+    return () => {
+      active = false;
+    };
+  }, [s.progress?.rankingScore]);
+  if (error) return <p role="alert">{error}</p>;
+  if (!rows) return <p role="status">Cargando el ranking…</p>;
+  if (!rows.length)
+    return (
+      <Empty title="El ranking aún está vacío" art="level">
+        Sé de los primeros en registrar una visita.
+      </Empty>
+    );
+  return (
+    <ol className="card stack ranking" aria-label="Ranking del evento">
+      {rows.map((row) => (
+        <li className="row" key={row.userId} aria-current={row.userId === s.user?.id}>
+          <b>{row.position}</b>
+          <span className="grow">
+            <strong>{row.displayName}</strong>
+            <small>Nivel {row.level}</small>
+          </span>
+          <Pill tone={row.userId === s.user?.id ? 'purple' : undefined}>
+            {row.rankingScore} pts
+          </Pill>
+        </li>
+      ))}
+    </ol>
+  );
+}
 export function LiveMissions({ rewards = false }: { rewards?: boolean }) {
   const s = useLive();
   const p = s.progress;
@@ -311,6 +409,12 @@ export function LiveMissions({ rewards = false }: { rewards?: boolean }) {
         {rewards ? 'los premios y sus condiciones de canje' : 'las misiones disponibles'}. Mientras
         tanto, sigue explorando los stands.
       </Empty>
+      {!rewards && (
+        <>
+          <SectionTitle>Ranking</SectionTitle>
+          <Ranking />
+        </>
+      )}
       <Link className="button secondary" to="/stands">
         Explorar stands
       </Link>

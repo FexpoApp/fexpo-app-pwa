@@ -364,7 +364,7 @@ for (const width of [320, 390, 768, 1440])
     );
     if ([390, 1440].includes(width))
       await page.screenshot({
-        path: `docs/screenshots/local/welcome-${width}.png`,
+        path: `test-results/screenshots/local/welcome-${width}.png`,
         fullPage: true,
       });
     await page.getByRole('link', { name: 'Probar mi NFC' }).click();
@@ -375,7 +375,7 @@ for (const width of [320, 390, 768, 1440])
     );
     if (width === 390)
       await page.screenshot({
-        path: 'docs/screenshots/local/nfc-reading-fixture.png',
+        path: 'test-results/screenshots/local/nfc-reading-fixture.png',
         fullPage: true,
       });
     expect(errors).toEqual([]);

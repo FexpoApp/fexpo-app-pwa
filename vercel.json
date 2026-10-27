@@ -1,4 +1,7 @@
 {
+  "buildCommand": "npm run build:live",
+  "installCommand": "npm ci",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/((?!api/|assets/|fonts/|icons/|manifest.webmanifest|sw.js|workbox-).*)",
@@ -6,7 +9,57 @@
     }
   ],
   "headers": [
-    { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
-    { "source": "/index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+    {
+      "source": "/sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache"
+        }
+      ]
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "fexpo-app.vercel.app"
+        },
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/html.*"
+        }
+      ],
+      "destination": "https://app.fexpo.lat/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "fexpo-app-quispevargasomar-7449s-projects.vercel.app"
+        },
+        {
+          "type": "header",
+          "key": "accept",
+          "value": ".*text/html.*"
+        }
+      ],
+      "destination": "https://app.fexpo.lat/:path*",
+      "permanent": true
+    }
   ]
 }

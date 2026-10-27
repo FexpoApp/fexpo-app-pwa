@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import { fileURLToPath, URL } from 'node:url';
 
 export default defineConfig(({ mode }) => {
-  const env = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
+  const env = { ...loadEnv(mode, process.cwd(), ''), ...process.env };
   const backendBridge: Plugin = {
     name: 'fexpo-backend-bridge',
     configureServer(server) {

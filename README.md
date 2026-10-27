@@ -1,12 +1,15 @@
 # Fexpo App PWA
 
+Producción: **https://app.fexpo.lat**, modo `live`, conectada mediante el puente de Vercel a
+`https://api.fexpo.lat`. Configuración y pruebas reales: [docs/DEPLOY_VERCEL.md](docs/DEPLOY_VERCEL.md).
+
 ## Mapa del recinto
 
 En modo local/demo, Mapa ofrece los planos originales en 2D y una vista interior 3D construida con los mismos contornos y lotes. Incluye selector de pabellón/planta, búsqueda, fichas de stands, NFC y GPS relativo para mover el avatar al caminar. Escala y orientación GPS provisionales, pendientes de georreferenciación. Detalles y prueba: [docs/CAMPUS_MAP.md](docs/CAMPUS_MAP.md).
 
 App de visitantes en React + Vite + TypeScript, con modo local independiente del backend y un modo conectado preparado para retomarlo. Conserva la interfaz clara/oscura de los bocetos.
 
-## Modo actual: sin backend de Fexpo
+## Modo local para desarrollo
 
 **Entrada actual de prueba:** «Continuar con Google» permanece como mock deshabilitado, marcado «Próximamente». «Entrar y probar la app» crea un visitante de prueba local sin Google ni backend; la sesión se recuerda en este dispositivo y se limpia desde Perfil. El lector NFC real continúa disponible. El acceso Google descrito abajo queda preparado para reactivarlo después, pero ya no se ejecuta desde la bienvenida.
 
@@ -153,4 +156,6 @@ npm run build:local
 
 Para un Chromium existente: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. Las pruebas conectadas interceptan la API y simulan NDEF y vibración: verifican contratos e interacciones, no hardware ni Google real. Las pruebas de demo cubren sus flujos de forma independiente.
 
-Evidencia y límites de la revisión: [docs/INTEGRATION_QA.md](docs/INTEGRATION_QA.md). No se modifican Expo ni el backend al trabajar en este proyecto.
+Cobertura E2E, ejecución aislada en GitHub Actions, fallos corregidos y funciones
+pendientes: [docs/PWA_E2E_CI.md](docs/PWA_E2E_CI.md). Evidencia de integración:
+[docs/INTEGRATION_QA.md](docs/INTEGRATION_QA.md).

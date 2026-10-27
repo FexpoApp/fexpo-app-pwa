@@ -131,15 +131,7 @@ export interface ListStandsParams {
 //    map_pois). La app los convierte: X = minX + x * ancho.
 
 export type PoiType =
-  | 'entrance'
-  | 'exit'
-  | 'toilet'
-  | 'food'
-  | 'stage'
-  | 'info'
-  | 'health'
-  | 'parking'
-  | 'other';
+  'entrance' | 'exit' | 'toilet' | 'food' | 'stage' | 'info' | 'health' | 'parking' | 'other';
 
 export interface MapZoneDto {
   id: string;
@@ -301,4 +293,34 @@ export interface StreakDto {
 
 export interface VisitsResponse {
   items: Visit[];
+}
+
+// ─── Ranking, perfil y registro a actividades ────────────────────────────────
+
+/** GET /events/:eventId/leaderboard — ranking sanitizado. */
+export interface LeaderboardEntryDto {
+  position: number;
+  userId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  rankingScore: number;
+  level: number;
+}
+
+/** GET/PATCH /me/profile */
+export interface ProfileDto {
+  id: string;
+  displayName: string | null;
+  fullName: string | null;
+  avatarUrl: string | null;
+  phone: string | null;
+  bio: string | null;
+  locale: string | null;
+}
+
+/** POST /activities/:activityId/register */
+export interface AttendanceDto {
+  id: string;
+  activityId: string;
+  status: 'registered' | 'attended' | 'cancelled';
 }

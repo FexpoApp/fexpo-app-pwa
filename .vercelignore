@@ -1,0 +1,11 @@
+node_modules
+dist
+.git
+.env*
+.local-tools
+test-results
+playwright-report
+docs/screenshots
+AGENT_HISTORY.md
+pnpm-lock.yaml
+pnpm-workspace.yaml

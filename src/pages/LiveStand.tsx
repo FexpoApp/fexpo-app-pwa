@@ -7,21 +7,25 @@ import { EVENT_ID, UUID } from '@/services/config';
 import { useLive, normalizeStand, message } from '@/state/live';
 import { useUI } from '@/state/demo';
 import { CategoryTile, Empty, Pill } from '@/ui/components';
-import type { ActivityDto, StandDto } from '@/types/api';
+import type { ActivityDto, AttendanceDto, StandDto } from '@/types/api';
 import type { Stand } from '@/types/domain';
 export function LiveStand() {
   const { id = '' } = useParams();
   const s = useLive();
   const [detail, setDetail] = useState<Stand | null>(null);
   const [activities, setActivities] = useState<ActivityDto[]>([]);
+  const [activityError, setActivityError] = useState('');
+  const [activityAttempt, setActivityAttempt] = useState(0);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('catalog');
+  const [registered, setRegistered] = useState<Record<string, 'busy' | 'done' | string>>({});
   const stand = detail || s.stands.find((item) => item.id === id);
   useEffect(() => {
     let active = true;
     setDetail(null);
     setActivities([]);
+    setActivityError('');
     setError('');
     setLoading(true);
     if (!UUID.test(id)) {
@@ -40,9 +44,16 @@ export function LiveStand() {
       }
       try {
         const item = normalizeStand((await request<StandDto>(`/stands/${id}`)).data);
-        const events = await allPages<ActivityDto>(
-          `/events/${EVENT_ID}/activities?standId=${id}`,
-        ).catch(() => []);
+        let events: ActivityDto[];
+        try {
+          events = await allPages<ActivityDto>(`/events/${EVENT_ID}/activities?standId=${id}`);
+        } catch (e) {
+          if (active) {
+            setDetail(item);
+            setActivityError(message(e));
+          }
+          return;
+        }
         if (active) {
           setDetail(item);
           setActivities(events);
@@ -57,7 +68,20 @@ export function LiveStand() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, activityAttempt]);
+  async function register(activityId: string) {
+    setRegistered((v) => ({ ...v, [activityId]: 'busy' }));
+    try {
+      await request<AttendanceDto>(`/activities/${activityId}/register`, {
+        method: 'POST',
+        body: {},
+        auth: true,
+      });
+      setRegistered((v) => ({ ...v, [activityId]: 'done' }));
+    } catch (e) {
+      setRegistered((v) => ({ ...v, [activityId]: message(e) }));
+    }
+  }
   if (!stand)
     return (
       <Empty
@@ -168,6 +192,18 @@ export function LiveStand() {
         {tab === 'games' && (
           <>
             <h3>Experiencias del stand</h3>
+            {loading && <p role="status">Cargando actividades…</p>}
+            {activityError && (
+              <div className="card stack" role="alert">
+                <p>{activityError}</p>
+                <button
+                  className="button secondary"
+                  onClick={() => setActivityAttempt((n) => n + 1)}
+                >
+                  Reintentar actividades
+                </button>
+              </div>
+            )}
             {stand.activity && <p className="card">{stand.activity}</p>}
             {activities.map((activity) => (
               <div className="card" key={activity.id}>
@@ -176,9 +212,32 @@ export function LiveStand() {
                 {activity.startsAt && (
                   <small>{new Date(activity.startsAt).toLocaleString('es-BO')}</small>
                 )}
+                {s.status === 'signedIn' ? (
+                  <>
+                    <button
+                      className="button secondary"
+                      disabled={
+                        registered[activity.id] === 'busy' || registered[activity.id] === 'done'
+                      }
+                      onClick={() => void register(activity.id)}
+                    >
+                      {registered[activity.id] === 'done'
+                        ? 'Inscripción confirmada'
+                        : registered[activity.id] === 'busy'
+                          ? 'Inscribiendo…'
+                          : 'Inscribirme'}
+                    </button>
+                    {registered[activity.id] &&
+                      !['busy', 'done'].includes(registered[activity.id]) && (
+                        <p role="alert">{registered[activity.id]}</p>
+                      )}
+                  </>
+                ) : (
+                  <small>Accede con Google desde Perfil para inscribirte.</small>
+                )}
               </div>
             ))}
-            {!stand.activity && !activities.length && (
+            {!loading && !activityError && !stand.activity && !activities.length && (
               <Empty title="Nuevas experiencias por descubrir" art="missions">
                 Las actividades publicadas aparecerán aquí.
               </Empty>
