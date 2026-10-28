@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
 import './styles.css';
+import './brand.css';
 
 // Google OAuth is authorized for the canonical app origin. Keep legacy
 // production aliases (including installed PWAs) from starting a login there.

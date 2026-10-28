@@ -23,7 +23,7 @@ export function useTheme() {
       document.documentElement.dataset.theme = theme;
       document
         .querySelector('meta[name="theme-color"]')
-        ?.setAttribute('content', theme === 'dark' ? '#101012' : '#f6f8fc');
+        ?.setAttribute('content', theme === 'dark' ? '#101b27' : '#f5f4ef');
       try {
         localStorage.setItem('fexpo-pwa-theme', mode);
       } catch {
