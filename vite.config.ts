@@ -32,15 +32,15 @@ export default defineConfig(({ mode }) => {
         registerType: 'prompt',
         manifest: {
           id: '/',
-          name: 'Fexpo',
-          short_name: 'Fexpo',
+          name: 'fexpo',
+          short_name: 'fexpo',
           lang: 'es',
           description: 'Tu feria, a tu ritmo. Descubre stands y registra tu recorrido con Fexpo.',
           start_url: '/',
           scope: '/',
           display: 'standalone',
-          background_color: '#f6f8fc',
-          theme_color: '#087ec2',
+          background_color: '#F5F4EF',
+          theme_color: '#132D46',
           icons: [
             { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
             { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
@@ -58,6 +58,7 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,otf,ttf,png,jpg,svg,webp,mp3}'],
+          globIgnores: ['**/matilda-*.mp3'],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
           // Public illustrations have stable names; they must receive content revisions.
           dontCacheBustURLsMatching: /^assets\/.*-[\w-]{8}\.(?:js|css)$/,

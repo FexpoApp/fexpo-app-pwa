@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, Nfc } from 'lucide-react';
 import { LOCAL } from '@/services/config';
 import { useLocalAccount } from '@/state/local-account';
+import { Brand } from '@/ui/Brand';
 
 function GoogleMark() {
   return (
@@ -50,7 +51,7 @@ export function Welcome() {
       <div className="welcome-shade" />
       <header className="welcome-header">
         <span className="welcome-brand">
-          <span className="brand-mark">F</span>Fexpo
+          <Brand />
         </span>
         <span className="welcome-city">LA PAZ · BOLIVIA</span>
       </header>
