@@ -2,7 +2,7 @@
 const COOKIE = 'fexpo_refresh';
 const refreshes = new Map();
 const allowed =
-  /^(?:\/events\/[\da-f-]{36}\/(?:stands|map|activities|leaderboard|me\/(?:gamification|points|visits|favorites|streak))|\/stands\/[\da-f-]{36}(?:\/(?:favorite|check-ins|dynamics))?|\/activities\/[\da-f-]{36}\/register|\/me\/(?:qr|profile)|\/auth\/me)$/i;
+  /^(?:\/events\/[\da-f-]{36}\/(?:stands|map|activities|leaderboard|me\/(?:gamification|points|visits|favorites|streak))|\/stands\/[\da-f-]{36}(?:\/(?:favorite|check-ins|dynamics|leads))?|\/activities\/[\da-f-]{36}\/register|\/me\/(?:qr|profile)|\/auth\/me)$/i;
 const fail = (res, status, code, message) => {
   res.statusCode = status;
   res.end(JSON.stringify({ success: false, error: { code, message } }));
@@ -73,7 +73,7 @@ export async function bridge(req, res, options = process.env) {
         return fail(res, 404, 'NOT_FOUND', 'Ruta no disponible.');
       const mutation = route.endsWith('/favorite')
         ? ['POST', 'DELETE']
-        : route.endsWith('/check-ins') || route.endsWith('/register')
+        : route.endsWith('/check-ins') || route.endsWith('/register') || route.endsWith('/leads')
           ? ['POST']
           : route === '/me/profile'
             ? ['GET', 'PATCH']

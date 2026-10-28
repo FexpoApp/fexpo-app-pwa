@@ -27,6 +27,32 @@ async function call(url: string, method = 'GET', body?: unknown, headers = {}) {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('Bridge de sesión y rutas permitidas', () => {
+  it('permite crear un contacto comercial y bloquea lectura o eliminación desde visitantes', async () => {
+    const fetcher = vi.fn(
+      async () => new Response(JSON.stringify({ success: true, data: { id: 'lead-1' } })),
+    );
+    vi.stubGlobal('fetch', fetcher);
+    const path = '/stands/11111111-1111-4111-8111-111111111111/leads';
+    expect(
+      (
+        await call(
+          `/api/backend?path=${encodeURIComponent(path)}`,
+          'POST',
+          { contact_name: 'Ana', consent_given: true },
+          { authorization: 'Bearer test' },
+        )
+      ).statusCode,
+    ).toBe(200);
+    expect((await call(`/api/backend?path=${encodeURIComponent(path)}`)).statusCode).toBe(405);
+    expect((await call(`/api/backend?path=${encodeURIComponent(path)}`, 'DELETE')).statusCode).toBe(
+      405,
+    );
+    expect(
+      (await call('/api/backend?path=/companies/11111111-1111-4111-8111-111111111111/leads'))
+        .statusCode,
+    ).toBe(404);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
   it('guarda refresh en cookie HttpOnly y lo elimina del JSON', async () => {
     vi.stubGlobal(
       'fetch',
