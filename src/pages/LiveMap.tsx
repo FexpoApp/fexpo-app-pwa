@@ -1,3 +1,4 @@
+import { matchesStand } from '@/services/stand-search';
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, MapPin, ChevronRight, Plus, Minus, RotateCcw } from 'lucide-react';
@@ -7,11 +8,6 @@ import { Empty, Pill } from '@/ui/components';
 import { livePlan } from '@/features/campus/live-plan';
 import type { CampusCamera } from '@/features/campus/IndoorScene';
 const IndoorScene = lazy(() => import('@/features/campus/IndoorScene'));
-const norm = (s: string) =>
-  s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
 function Controls() {
   const { zoomIn, zoomOut, resetTransform } = useControls();
   return (
@@ -62,11 +58,7 @@ export function LiveMap() {
       view,
       ...(target ? { stand: target } : {}),
     });
-  const stands = s.stands.filter((stand) =>
-    norm(
-      `${stand.name} ${stand.boothCode} ${stand.categoryLabel || ''} ${stand.tags.join(' ')}`,
-    ).includes(norm(query)),
-  );
+  const stands = s.stands.filter((stand) => matchesStand(stand, query));
   const view = floor?.viewBox.trim().split(/[ ,]+/).map(Number) || [0, 0, 1000, 1000];
   const [x, y, w, h] =
     view.length === 4 && view.every(Number.isFinite) && view[2] > 0 && view[3] > 0

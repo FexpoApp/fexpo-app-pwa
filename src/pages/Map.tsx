@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { LIVE } from '@/services/config';
-import { LiveMap } from './LiveMap';
+import { PublishedCampusMap } from '@/features/campus/PublishedCampusMap';
 import { useLive } from '@/state/live';
 import { PLAN_GEOMETRY } from '@/data/map-plans';
 import '@/features/campus/campus.css';
@@ -19,7 +19,7 @@ export function MapPage() {
         ),
       ));
   return LIVE && !campusPublished ? (
-    <LiveMap />
+    <PublishedCampusMap />
   ) : (
     <Suspense
       fallback={
