@@ -1,5 +1,5 @@
 import { STANDS } from '@/data/demo-data';
-import { extractStandIds } from '@/services/nfc-payload';
+import { extractStandIds, validateNfcEvent } from '@/services/nfc-payload';
 import { EVENT_ID } from '@/services/config';
 import { PLAN_GEOMETRY, PLAN_LOTS, type PlanGeometry } from '@/data/map-plans';
 import type { Stand } from '@/types/domain';
@@ -61,6 +61,7 @@ export function resolveCampusTag(
   records: readonly string[],
   points: CampusPoint[] = CAMPUS_POINTS,
 ): CampusPoint {
+  validateNfcEvent(records, EVENT_ID);
   const ids = extractStandIds(records);
   if (ids.length !== 1)
     throw new Error(

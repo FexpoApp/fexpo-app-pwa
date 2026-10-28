@@ -35,6 +35,30 @@ function fromJson(text: string): string | null {
   }
 }
 
+/** Validate both legacy URL tags and the versioned production text payload. */
+export function validateNfcEvent(records: readonly string[], expectedEvent: string) {
+  for (const raw of records) {
+    const text = raw.trim();
+    const event = text.match(/\/e\/([^/]+)\/s\//)?.[1];
+    if (event && event !== expectedEvent) throw new Error('Esta tarjeta pertenece a otra feria.');
+    if (!text.startsWith('{')) continue;
+    let value: { v?: unknown; eventId?: unknown; standId?: unknown };
+    try {
+      value = JSON.parse(text);
+    } catch {
+      throw new Error('El contenido NFC está dañado.');
+    }
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('El contenido NFC no es válido.');
+    if (value.eventId !== undefined && value.eventId !== expectedEvent)
+      throw new Error('Esta tarjeta pertenece a otra feria.');
+    if (value.v !== undefined && value.v !== 1)
+      throw new Error('La versión de esta tarjeta NFC no es compatible.');
+    if (value.v === 1 && (value.eventId !== expectedEvent || typeof value.standId !== 'string'))
+      throw new Error('Esta tarjeta NFC está incompleta.');
+  }
+}
+
 /** Busca el standId en los registros NDEF ya decodificados a texto. */
 export function extractStandIds(records: readonly string[]): string[] {
   const ids = new Set<string>();
