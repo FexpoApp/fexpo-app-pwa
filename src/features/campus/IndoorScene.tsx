@@ -15,6 +15,8 @@ interface Props {
   lots?: Lot[];
   lotColors?: string[];
   lotHeights?: number[];
+  showLotLabels?: boolean;
+  showStructureLabels?: boolean;
   route?: PlanPosition[];
   showAvatar?: boolean;
   dark: boolean;
@@ -144,16 +146,16 @@ export default function IndoorScene(props: Props) {
     for (const s of plan.structures) shapeFrom(s.path, 0.38, grey);
     const names = [...lots.map((l) => String(l[0])), ...plan.structures.map((s) => s.label || '')];
     const grid = Math.max(1, Math.ceil(Math.sqrt(names.length))),
-      cell = 128,
+      cell = Math.min(256, Math.floor(2048 / grid)),
       atlas = document.createElement('canvas');
     atlas.width = atlas.height = grid * cell;
     const ctx = atlas.getContext('2d');
     if (ctx)
       names.forEach((text, i) => {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = i < lots.length && plan.zoneId === 'yellow' ? '#132d46' : '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = `700 ${i < lots.length ? 80 : 24}px sans-serif`;
+        ctx.font = `700 ${i < lots.length ? cell * 0.62 : cell * 0.19}px Poppins, sans-serif`;
         const x = ((i % grid) + 0.5) * cell,
           y = (Math.floor(i / grid) + 0.5) * cell;
         const words = text.split(' / ');
@@ -163,6 +165,7 @@ export default function IndoorScene(props: Props) {
       });
     const texture = new THREE.CanvasTexture(atlas);
     texture.colorSpace = THREE.SRGBColorSpace;
+    texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     textures.push(texture);
     const labelMaterial = new THREE.MeshBasicMaterial({
       map: texture,
@@ -213,17 +216,18 @@ export default function IndoorScene(props: Props) {
       top.userData.lotIndex = index;
       pickable.push(top);
       box(Math.max(0.1, bw - 0.22), 0.5, 0.035, glass, p.x, 0.7, p.z + bd / 2);
-      label(
-        index,
-        p.x,
-        p.z,
-        height + 0.26,
-        Math.min(bw * 0.9, props.lotColors ? 5 : 1.7),
-        Math.min(bd * 0.9, 1.3),
-      );
+      if (props.showLotLabels !== false)
+        label(
+          index,
+          p.x,
+          p.z,
+          height + 0.26,
+          Math.min(bw * 0.9, props.lotColors ? 5 : 1.7),
+          Math.min(bd * 0.9, 1.3),
+        );
     });
     plan.structures.forEach((s, i) => {
-      if (s.x !== undefined && s.y !== undefined) {
+      if (props.showStructureLabels !== false && s.x !== undefined && s.y !== undefined) {
         const p = toWorld(plan, { x: s.x, y: s.y });
         label(lots.length + i, p.x, p.z, 0.4, 3.8, 1.4);
       }

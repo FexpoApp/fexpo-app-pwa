@@ -24,20 +24,9 @@ export function PublishedCampusMap() {
     [notice, setNotice] = useState('');
   const general =
     params.get('plan') === 'general' || (!params.has('floor') && !params.has('stand'));
-  const mode = params.get('view') === '2d' ? '2d' : '3d';
+  const mode = params.get('view') === '3d' ? '3d' : '2d';
   const dark = document.documentElement.dataset.theme === 'dark';
-  if (!general)
-    return (
-      <>
-        <button
-          className="button secondary"
-          onClick={() => setParams({ plan: 'general', view: mode })}
-        >
-          Ver recinto general
-        </button>
-        <LiveMap />
-      </>
-    );
+  if (!general) return <LiveMap />;
   const results = stands.filter((stand) => matchesStand(stand, query));
   return (
     <section className="indoor-experience" aria-label="Mapa general FIPAZ">

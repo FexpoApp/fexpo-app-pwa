@@ -8,6 +8,7 @@ import { registerNfc, useLive, message } from '@/state/live';
 import { audioFeedback } from '@/features/audio/feedback';
 import { useFeedback } from '@/features/audio/AudioHost';
 import { Empty, Modal, Pill } from '@/ui/components';
+import { useCampusLocation } from '@/features/campus/location';
 
 type Receipt = {
   status: 'confirmed' | 'pending';
@@ -86,6 +87,10 @@ export function LiveCheckin() {
       useFeedback.getState().holdNotices(true);
       const result = await registerNfc(reading.standId, reading.credential);
       if (!mounted.current || useLive.getState().user?.id !== currentUser) return;
+      if (result.status === 'confirmed')
+        useCampusLocation.setState({
+          last: { standId: reading.standId, at: new Date().toISOString() },
+        });
       setReceipt({
         status: result.status,
         points: result.response?.pointsAwarded ?? null,
@@ -178,7 +183,10 @@ export function LiveCheckin() {
             <Scan size={46} />
           </div>
           <h3 className="text-center">Acerca la tarjeta al celular</h3>
-          <p>Mantén la pantalla abierta y desbloqueada. Cuando confirme la lectura, retira la tarjeta.</p>
+          <p>
+            Mantén la pantalla abierta y desbloqueada. Cuando confirme la lectura, retira la
+            tarjeta.
+          </p>
           <button className="button secondary" onClick={cancel}>
             Cancelar lectura
           </button>

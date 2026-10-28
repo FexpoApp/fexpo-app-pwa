@@ -31,6 +31,8 @@ export function CampusOverview({
             lotColors={SITE_COLORS}
             lotHeights={[2, 2, 2, 4, 4, 4, 4]}
             showAvatar={false}
+            showLotLabels={false}
+            showStructureLabels={false}
             dark={dark}
             aerial={false}
             position={SITE_PLAN.origin}
@@ -141,13 +143,14 @@ export function CampusOverview({
       {mode === '3d' && (
         <>
           <div className="indoor-markers">
-            {SITE_LOTS.slice(0, 3).map(([name, x, y, w, h], i) => (
+            {SITE_LOTS.map(([name, x, y, w, h], i) => (
               <button
                 key={name}
-                className="indoor-marker overview-marker"
+                className={'indoor-marker overview-marker' + (i > 2 ? ' tower-marker' : '')}
                 data-plan-x={x + w / 2}
                 data-plan-y={y + h / 2}
-                data-elevation="2.7"
+                data-elevation={i > 2 ? '4.7' : '2.7'}
+                aria-label={'Abrir bloque ' + name}
                 onClick={() => onBuilding(SITE_ZONES[i])}
               >
                 {name}

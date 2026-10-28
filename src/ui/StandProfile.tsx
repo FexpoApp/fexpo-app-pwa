@@ -108,7 +108,7 @@ export function StandProfile({ stand }: { stand: Stand }) {
           <Bookmark size={17} fill={saved ? 'currentColor' : 'none'} />
           {saved ? 'Guardado' : 'Guardar'}
         </button>
-        <Link className="button secondary" to={`/map?stand=${stand.id}`}>
+        <Link className="button secondary" to={`/map?stand=${stand.id}&view=2d`}>
           <MapPin size={17} />
           Ubicación
         </Link>

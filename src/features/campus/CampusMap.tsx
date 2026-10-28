@@ -8,40 +8,36 @@ import {
   Compass,
   Plus,
   Minus,
-  LocateFixed,
   Layers,
-  Nfc,
   ChevronRight,
   RotateCcw,
   Navigation,
   List,
   Info,
-  Pause,
 } from 'lucide-react';
 import { STANDS } from '@/data/demo-data';
 import { LIVE } from '@/services/config';
 import { useLive } from '@/state/live';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '@/data/map-plans';
 import { CategoryTile, Modal } from '@/ui/components';
-import { nfcAvailable, readRawNfc } from '@/services/nfc';
-import { audioFeedback } from '@/features/audio/feedback';
+import { BottomSheet } from '@/ui/BottomSheet';
 import { useCampusLocation } from './location';
-import { CAMPUS_POINTS, lotAtPublishedPosition, pointsForStands, standAtLotIn } from './model';
 import { useRelativeGps } from './gps';
+import { CAMPUS_POINTS, lotAtPublishedPosition, pointsForStands, standAtLotIn } from './model';
 import IndoorPlan from './IndoorPlan';
 import { CampusOverview } from './CampusOverview';
+import { ServiceMark } from './ServiceMark';
 import { routeThroughAisles } from './routing';
 import type { CampusCamera } from './IndoorScene';
 import './campus.css';
 const Scene = lazy(() => import('./IndoorScene'));
 const buildings = [
-  { id: 'red', name: 'Bloque Rojo' },
-  { id: 'yellow', name: 'Bloque Amarillo' },
-  { id: 'green', name: 'Bloque Verde' },
+  { id: 'red', name: 'Rojo' },
+  { id: 'yellow', name: 'Amarillo' },
+  { id: 'green', name: 'Verde' },
   { id: 'entrance', name: 'Plaza Akapana' },
-  { id: 'food', name: 'Patio de comidas' },
+  { id: 'food', name: 'Comidas' },
 ];
-
 export default function CampusMap() {
   const live = useLive();
   const plans = LIVE
@@ -69,53 +65,61 @@ export default function CampusMap() {
         };
       })
     : STANDS;
+
   const points = LIVE ? pointsForStands(stands) : CAMPUS_POINTS;
   const [params, setParams] = useSearchParams();
   const requestedStand = stands.find((s) => s.id === params.get('stand'));
   const plan =
     plans.find((p) => p.id === (params.get('plan') || requestedStand?.planId)) || plans[0];
-  const mode = params.get('view') === '2d' || params.get('view') === 'plans' ? '2d' : '3d';
+  const mode = params.get('view') === '3d' ? '3d' : '2d';
+  const general = params.get('plan') === 'general' || (!params.get('plan') && !requestedStand);
   const [query, setQuery] = useState(''),
-    [selectedLot, setSelectedLot] = useState<number | null>(null);
+    [listing, setListing] = useState(false),
+    [help, setHelp] = useState(false);
   const [aerial, setAerial] = useState(false),
-    [follow, setFollow] = useState(false),
-    [failed, setFailed] = useState(false);
+    [failed, setFailed] = useState(false),
+    [routeDialog, setRouteDialog] = useState(false);
+  const [routeSource, setRouteSource] = useState(''),
+    [routing, setRouting] = useState(false);
+  const [locationDialog, setLocationDialog] = useState(false),
+    [gpsAnchor, setGpsAnchor] = useState('entry');
   const [dark, setDark] = useState(document.documentElement.dataset.theme === 'dark');
-  const [busy, setBusy] = useState(false),
-    [message, setMessage] = useState(''),
-    [help, setHelp] = useState(false),
-    [listing, setListing] = useState(false);
-  const camera = useRef<CampusCamera | null>(null),
-    abort = useRef<AbortController | null>(null);
-  const last = useCampusLocation((s) => s.last),
-    gps = useRelativeGps(plan.id);
-  const lastPoint = points.find((p) => p.id === last?.standId && p.planId === plan.id);
+  const camera = useRef<CampusCamera | null>(null);
+  const last = useCampusLocation((s) => s.last);
+  const gps = useRelativeGps(plan.id);
   const knownPoint = points.find((p) => p.id === last?.standId);
-  const [manualSource, setManualSource] = useState('');
-  const sourcePlan = plans.find((p) => p.id === (manualSource || knownPoint?.planId));
+  const sourcePlan = plans.find(
+    (p) => p.id === (routeSource === 'nfc' ? knownPoint?.planId : routeSource),
+  );
+  const selectedLot = PLAN_LOTS[plan.id].findIndex(([code]) =>
+    requestedStand
+      ? standAtLotIn(stands, plan.id, code)?.id === requestedStand.id
+      : params.get('lot') === String(code),
+  );
+  const lot = selectedLot >= 0 ? PLAN_LOTS[plan.id][selectedLot] : null;
+  const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
   const destination = points.find((p) => p.id === requestedStand?.id);
   const destinationPlan = plans.find((p) => p.id === destination?.planId);
-  const general =
-    params.get('plan') === 'general' ||
-    (!params.get('plan') &&
-      (!requestedStand || (sourcePlan && sourcePlan.zoneId !== destinationPlan?.zoneId)));
-  const position = gps.position || (lastPoint ? { x: lastPoint.x, y: lastPoint.y } : plan.origin);
-  const routeOrigin = !manualSource && knownPoint?.planId === plan.id ? knownPoint : plan.origin;
+  const position = gps.position || (knownPoint?.planId === plan.id ? knownPoint : plan.origin);
+  const origin = routeSource === 'nfc' && knownPoint?.planId === plan.id ? knownPoint : plan.origin;
   const route = useMemo(
     () =>
-      destination && destination.planId === plan.id && sourcePlan
-        ? routeThroughAisles(plan, routeOrigin, destination)
+      routing && sourcePlan && destination?.planId === plan.id
+        ? routeThroughAisles(plan, origin, destination)
         : [],
-    [plan.id, destination?.id, routeOrigin.x, routeOrigin.y, sourcePlan?.id],
+    [
+      routing,
+      sourcePlan?.id,
+      destination?.id,
+      destination?.x,
+      destination?.y,
+      plan.id,
+      origin.x,
+      origin.y,
+    ],
   );
-  const lot = selectedLot !== null ? PLAN_LOTS[plan.id][selectedLot] : null;
-  const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
-  const floors = plans.filter((p) => p.zoneId === plan.zoneId);
-  const results = stands.filter((stand) => matchesStand(stand, query));
-  const [vx, vy, vw, vh] = plan.viewBox.split(' ').map(Number);
-  const outside =
-    !!gps.position &&
-    (position.x < vx || position.x > vx + vw || position.y < vy || position.y > vy + vh);
+  const results = stands.filter((s) => matchesStand(s, query));
+  const sheetOpen = params.get('detail') === '1' && !!lot && !general;
   useEffect(() => {
     const observer = new MutationObserver(() =>
       setDark(document.documentElement.dataset.theme === 'dark'),
@@ -124,97 +128,79 @@ export default function CampusMap() {
       attributes: true,
       attributeFilter: ['data-theme'],
     });
-    const hide = () => {
-      if (document.hidden) abort.current?.abort();
-    };
-    document.addEventListener('visibilitychange', hide);
-    return () => {
-      observer.disconnect();
-      document.removeEventListener('visibilitychange', hide);
-      abort.current?.abort();
-    };
+    return () => observer.disconnect();
   }, []);
   useEffect(() => {
-    const stand = stands.find((s) => s.id === params.get('stand') && s.planId === plan.id);
-    const index = stand
-      ? PLAN_LOTS[plan.id].findIndex(
-          ([code]) => standAtLotIn(stands, plan.id, code)?.id === stand.id,
-        )
-      : -1;
-    setSelectedLot(index < 0 ? null : index);
     setAerial(false);
-    setFollow(false);
-  }, [plan.id, params.get('stand')]);
-  const changePlan = (id: string) => {
+  }, [plan.id]);
+  function changePlan(id: string) {
     setQuery('');
-    setSelectedLot(null);
+    setRouting(false);
     setParams({ plan: id, view: mode }, { replace: true });
-  };
-  const changeMode = (view: '2d' | '3d') => {
+  }
+  function changeMode(view: '2d' | '3d') {
     setFailed(false);
+    const next = new URLSearchParams(params);
+    next.set('view', view);
+    setParams(next, { replace: true });
+  }
+  function select(id: string) {
+    const stand = stands.find((s) => s.id === id);
+    if (!stand) return;
+    setQuery('');
+    setListing(false);
+    setRouting(false);
+    setParams({ plan: stand.planId, view: '2d', stand: id }, { replace: true });
+  }
+  function selectLot(index: number) {
+    const value = PLAN_LOTS[plan.id][index];
+    if (!value) return;
+    const stand = standAtLotIn(stands, plan.id, value[0]);
+    setRouting(false);
     setParams(
       {
-        plan: general ? 'general' : plan.id,
-        view,
-        ...(requestedStand ? { stand: requestedStand.id } : {}),
+        plan: plan.id,
+        view: mode,
+        lot: String(value[0]),
+        detail: '1',
+        ...(stand ? { stand: stand.id } : {}),
       },
       { replace: true },
     );
-  };
-  const select = (id: string) => {
-    const stand = stands.find((s) => s.id === id)!;
-    setQuery('');
-    setListing(false);
-    setFollow(false);
-    setParams({ plan: 'general', view: mode, stand: id }, { replace: true });
-  };
-  const selectLot = (index: number) => {
-    setSelectedLot(index);
-    setFollow(false);
-  };
-  async function locateNfc() {
-    if (abort.current) return;
-    const controller = new AbortController();
-    abort.current = controller;
-    setBusy(true);
-    setMessage('Acerca la tarjeta del stand a la parte trasera del celular.');
-    try {
-      const reading = await readRawNfc(controller.signal);
-      if (controller.signal.aborted) return;
-      audioFeedback.request('nfcRead');
-      const id = useCampusLocation.getState().locate(reading.records, points);
-      gps.stop(true);
-      const target = stands.find((s) => s.id === id);
-      if (target) setParams({ plan: target.planId, view: mode, stand: id }, { replace: true });
-      setMessage('Última etiqueta localizada. Esta lectura no acredita puntos.');
-    } catch (e) {
-      if (controller.signal.aborted) setMessage('Lectura cancelada.');
-      else
-        setMessage(
-          e instanceof DOMException && e.name === 'NotAllowedError'
-            ? 'Permite el acceso a NFC en Chrome.'
-            : e instanceof Error
-              ? e.message
-              : 'No se pudo leer la tarjeta.',
-        );
-    } finally {
-      if (abort.current === controller) {
-        abort.current = null;
-        setBusy(false);
-      }
-    }
   }
-  const toggleGps = () => {
-    if (gps.status === 'active' || gps.status === 'waiting') {
-      gps.stop();
-      setFollow(false);
-    } else {
-      setFollow(true);
-      gps.start(position);
-    }
-  };
+  function closeSheet() {
+    const next = new URLSearchParams(params);
+    next.delete('detail');
+    setParams(next, { replace: true });
+  }
+  function openRoute() {
+    closeSheet();
+    setRouteSource(routeSource || (knownPoint ? 'nfc' : ''));
+    setRouteDialog(true);
+  }
+  function startRoute() {
+    if (!destinationPlan || !sourcePlan) return;
+    setRouting(true);
+    setRouteDialog(false);
+    setParams(
+      {
+        plan: sourcePlan.zoneId === destinationPlan.zoneId ? destinationPlan.id : 'general',
+        stand: requestedStand!.id,
+        view: '2d',
+      },
+      { replace: true },
+    );
+  }
+  function stopRoute() {
+    setRouting(false);
+    if (destinationPlan && requestedStand)
+      setParams(
+        { plan: destinationPlan.id, stand: requestedStand.id, view: mode },
+        { replace: true },
+      );
+  }
   return (
-    <section className="indoor-experience" aria-label="Mapa interactivo FIPAZ">
+    <section className="indoor-experience compact-map" aria-label="Mapa interactivo FIPAZ">
       <div className="indoor-toolbar">
         <div className="indoor-search-row">
           <label className="search-field">
@@ -227,7 +213,7 @@ export default function CampusMap() {
             />
             {query && (
               <button aria-label="Limpiar búsqueda" onClick={() => setQuery('')}>
-                <X size={18} />
+                <X size={17} />
               </button>
             )}
           </label>
@@ -240,7 +226,7 @@ export default function CampusMap() {
           </button>
           <button
             className="icon-button"
-            aria-label="Acerca del mapa y GPS"
+            aria-label="Acerca del mapa"
             onClick={() => setHelp(true)}
           >
             <Info size={20} />
@@ -248,13 +234,13 @@ export default function CampusMap() {
         </div>
         <div className="building-chips" aria-label="Bloques del recinto">
           <button
-            aria-pressed={!!general}
+            aria-pressed={general}
             onClick={() =>
               setParams(
                 {
                   plan: 'general',
                   view: mode,
-                  ...(requestedStand ? { stand: requestedStand.id } : {}),
+                  ...(routing && requestedStand ? { stand: requestedStand.id } : {}),
                 },
                 { replace: true },
               )
@@ -276,28 +262,31 @@ export default function CampusMap() {
                 onClick={() => changePlan(plans.find((p) => p.zoneId === b.id)!.id)}
               >
                 <span />
-                {b.name.replace('Bloque ', '')}
+                {b.name}
               </button>
             ))}
         </div>
-        <div className="indoor-floor-row">
+        <div className="compact-floor-heading">
+          <h2>{general ? 'Campo ferial Chuquiago Marka' : plan.name}</h2>
           {!general && (
             <div className="indoor-floor-tabs" aria-label="Planta">
-              {floors.map((p) => (
-                <button key={p.id} aria-pressed={p.id === plan.id} onClick={() => changePlan(p.id)}>
-                  {p.level === 'Planta baja'
-                    ? 'Baja'
-                    : p.level === 'Planta alta'
-                      ? 'Alta'
-                      : 'Exterior'}
-                </button>
-              ))}
+              {plans
+                .filter((p) => p.zoneId === plan.zoneId)
+                .map((p) => (
+                  <button
+                    key={p.id}
+                    aria-pressed={p.id === plan.id}
+                    onClick={() => changePlan(p.id)}
+                  >
+                    {p.level === 'Planta baja'
+                      ? 'Baja'
+                      : p.level === 'Planta alta'
+                        ? 'Alta'
+                        : 'Exterior'}
+                  </button>
+                ))}
             </div>
           )}
-        </div>
-        <div className="indoor-plan-title">
-          <h2>{general ? 'Campo ferial Chuquiago Marka' : plan.name}</h2>
-          <small>{general ? 'FIPAZ 2026' : `${PLAN_LOTS[plan.id].length} espacios`}</small>
         </div>
         {query && (
           <div className="indoor-results">
@@ -309,7 +298,7 @@ export default function CampusMap() {
                     <strong>{s.name}</strong>
                     <small>{s.boothCode}</small>
                   </span>
-                  <ChevronRight size={18} />
+                  <ChevronRight size={17} />
                 </button>
               ))
             ) : (
@@ -318,119 +307,37 @@ export default function CampusMap() {
           </div>
         )}
       </div>
-      {requestedStand && (
-        <div className="route-summary">
-          <div>
-            <strong>{requestedStand.name}</strong>
-            <small>
-              {requestedStand.boothCode} · {destinationPlan?.name || 'Ubicación por publicar'}
-            </small>
-          </div>
-          <label>
-            Desde{' '}
-            <select
-              aria-label="Punto de inicio del recorrido"
-              value={manualSource || (knownPoint ? 'nfc' : '')}
-              onChange={(e) => {
-                setManualSource(e.target.value === 'nfc' ? '' : e.target.value);
-                setParams(
-                  { plan: 'general', view: mode, stand: requestedStand.id },
-                  { replace: true },
-                );
-              }}
-            >
-              <option value="" disabled>
-                Elige dónde estás
-              </option>
-              {knownPoint && <option value="nfc">Última lectura NFC</option>}
-              {plans.map((p) => (
-                <option key={p.id} value={p.id}>
-                  Ingreso · {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {sourcePlan && (
-            <small>
-              Ruta orientativa ·{' '}
-              {sourcePlan.id !== destinationPlan?.id &&
-              sourcePlan.zoneId === destinationPlan?.zoneId
-                ? 'Cambia de planta por escaleras o ascensor.'
-                : general
-                  ? 'Sigue los accesos entre bloques.'
-                  : route.length
-                    ? 'Sigue los pasillos hasta el stand.'
-                    : 'No se encontró un pasillo continuo en este plano.'}
-            </small>
-          )}
-          {general && destinationPlan && (
-            <button
-              className="button secondary"
-              onClick={() =>
-                setParams(
-                  { plan: destinationPlan.id, view: mode, stand: requestedStand.id },
-                  { replace: true },
-                )
-              }
-            >
-              Ver stand en {destinationPlan.name}
-              <ChevronRight size={15} />
-            </button>
-          )}
-          {!general && (
-            <Link className="route-profile-link" to={`/stands/${requestedStand.id}`}>
-              Ver perfil <ChevronRight size={14} />
-            </Link>
-          )}
-          <button
-            className="route-close icon-button"
-            aria-label="Cerrar recorrido"
-            onClick={() =>
-              setParams({ plan: general ? 'general' : plan.id, view: mode }, { replace: true })
-            }
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
       <div
         className="indoor-viewer"
         data-mode={mode}
         data-plan-id={general ? 'general' : plan.id}
+        data-position-source={
+          gps.position ? 'gps' : knownPoint?.planId === plan.id ? 'nfc' : 'unconfirmed'
+        }
         data-avatar-x={position.x}
         data-avatar-y={position.y}
-        data-position-source={gps.position ? 'gps' : lastPoint ? 'nfc' : 'origin'}
       >
         {general ? (
           <CampusOverview
             mode={mode}
             dark={dark}
-            from={sourcePlan?.zoneId}
-            to={destinationPlan?.zoneId}
+            from={routing ? sourcePlan?.zoneId : undefined}
+            to={routing ? destinationPlan?.zoneId : undefined}
             onBuilding={(zone) => {
-              const target = plans.find((p) => p.zoneId === zone);
-              if (target)
+              const p = plans.find((p) => p.zoneId === zone);
+              if (p)
                 setParams(
                   {
-                    plan: target.id,
+                    plan: routing && destinationPlan?.zoneId === zone ? destinationPlan.id : p.id,
                     view: mode,
-                    ...(destinationPlan?.zoneId === zone && requestedStand
-                      ? { stand: requestedStand.id, plan: destinationPlan.id }
-                      : {}),
+                    ...(routing && requestedStand ? { stand: requestedStand.id } : {}),
                   },
                   { replace: true },
                 );
             }}
             onFailure={() => {
+              changeMode('2d');
               setFailed(true);
-              setParams(
-                {
-                  plan: 'general',
-                  view: '2d',
-                  ...(requestedStand ? { stand: requestedStand.id } : {}),
-                },
-                { replace: true },
-              );
             }}
           />
         ) : (
@@ -439,12 +346,13 @@ export default function CampusMap() {
               <IndoorPlan
                 plan={plan}
                 position={position}
-                selectedLot={selectedLot}
+                selectedLot={selectedLot < 0 ? null : selectedLot}
                 onSelectLot={selectLot}
                 cameraRef={camera}
                 stands={stands}
                 route={route}
-                showAvatar={!!gps.position || !!lastPoint || manualSource === plan.id}
+                showAvatar={!!gps.position || knownPoint?.planId === plan.id}
+                focusSelection={!routing && selectedLot >= 0}
               />
             ) : (
               <Suspense
@@ -459,32 +367,33 @@ export default function CampusMap() {
                   dark={dark}
                   aerial={aerial}
                   position={position}
-                  follow={follow}
+                  follow={gps.status === 'active'}
                   route={route}
-                  showAvatar={!!gps.position || !!lastPoint || manualSource === plan.id}
-                  selectedLot={selectedLot}
+                  showAvatar={!!gps.position || knownPoint?.planId === plan.id}
+                  selectedLot={selectedLot < 0 ? null : selectedLot}
                   onSelectLot={selectLot}
                   cameraRef={camera}
                   onFailure={() => {
+                    changeMode('2d');
                     setFailed(true);
-                    setParams({ plan: plan.id, view: '2d' }, { replace: true });
                   }}
                 />
               </Suspense>
             )}
-            {!general && mode === '3d' && (
+            {mode === '3d' && (
               <div className="indoor-markers" key={plan.id}>
                 {plan.structures
                   .filter((s) => s.x !== undefined && s.y !== undefined)
                   .map((s, i) => (
                     <span
                       className="indoor-service"
-                      key={`service-${i}`}
+                      key={i}
                       data-plan-x={s.x}
                       data-plan-y={s.y}
                       data-elevation=".6"
                     >
-                      {s.label}
+                      {s.label && <ServiceMark label={s.label} size={12} />}
+                      <span>{s.label}</span>
                     </span>
                   ))}
                 {points
@@ -493,123 +402,97 @@ export default function CampusMap() {
                     const s = stands.find((s) => s.id === p.id)!;
                     return (
                       <button
-                        className="indoor-marker"
+                        className={
+                          'indoor-marker' + (p.id === requestedStand?.id ? ' marker-selected' : '')
+                        }
                         key={p.id}
                         data-plan-x={p.x}
                         data-plan-y={p.y}
-                        aria-label={`Ver ${s.name}, stand ${s.boothCode}`}
-                        onClick={() => select(p.id)}
+                        aria-label={'Ver ' + s.name + ', stand ' + s.boothCode}
+                        onClick={() =>
+                          selectLot(
+                            PLAN_LOTS[plan.id].findIndex(
+                              ([code]) => standAtLotIn(stands, plan.id, code)?.id === s.id,
+                            ),
+                          )
+                        }
                       >
-                        <Store size={16} />
+                        <Store size={14} />
                         <span>{s.boothCode}</span>
                       </button>
                     );
                   })}
               </div>
             )}
-            <div className="indoor-camera-top">
-              {mode === '3d' && (
-                <>
-                  <button aria-label="Girar mapa" onClick={() => camera.current?.rotate()}>
-                    <Compass size={20} />
-                  </button>
-                  <button
-                    aria-label="Alternar vista aérea"
-                    aria-pressed={aerial}
-                    onClick={() => setAerial(!aerial)}
-                  >
-                    <Layers size={20} />
-                  </button>
-                </>
-              )}
-            </div>
-            <div className="indoor-zoom">
-              <button aria-label="Acercar mapa" onClick={() => camera.current?.zoom(1.2)}>
-                <Plus size={22} />
-              </button>
-              <button aria-label="Alejar mapa" onClick={() => camera.current?.zoom(1 / 1.2)}>
-                <Minus size={22} />
-              </button>
-              <button aria-label="Restablecer mapa" onClick={() => camera.current?.reset()}>
-                <RotateCcw size={19} />
-              </button>
-              <button
-                aria-label="Centrar avatar"
-                aria-pressed={follow}
-                onClick={() => {
-                  setFollow(!follow);
-                  camera.current?.follow();
-                }}
-              >
-                <LocateFixed size={21} />
-              </button>
-            </div>
-            <div className="indoor-view-bottom">
-              <div className="indoor-modes">
-                <button aria-pressed={mode === '2d'} onClick={() => changeMode('2d')}>
-                  2D
+            {mode === '3d' && (
+              <div className="indoor-camera-top">
+                <button aria-label="Girar mapa" onClick={() => camera.current?.rotate()}>
+                  <Compass size={20} />
                 </button>
-                <button aria-pressed={mode === '3d'} onClick={() => changeMode('3d')}>
-                  3D
-                </button>
-              </div>
-              {!general && (
                 <button
-                  className={`indoor-gps ${gps.status === 'active' ? 'active' : ''}`}
-                  aria-label={
-                    gps.status === 'active' || gps.status === 'waiting'
-                      ? 'Detener GPS'
-                      : 'Mi ubicación'
-                  }
-                  onClick={toggleGps}
+                  aria-label="Alternar vista aérea"
+                  aria-pressed={aerial}
+                  onClick={() => setAerial(!aerial)}
                 >
-                  {gps.status === 'active' || gps.status === 'waiting' ? (
-                    <Pause size={19} />
-                  ) : (
-                    <Navigation size={19} />
-                  )}
-                  <span>
-                    {gps.status === 'waiting'
-                      ? 'Buscando GPS…'
-                      : gps.status === 'active'
-                        ? 'GPS activo'
-                        : 'Mi ubicación'}
-                  </span>
+                  <Layers size={20} />
                 </button>
-              )}
-            </div>
-            {!general && lot && !(requestedStand && sourcePlan) && (
-              <div className="indoor-selection">
-                <div className="row">
-                  {selectedStand ? (
-                    <CategoryTile category={selectedStand.category} />
-                  ) : (
-                    <span className="indoor-lot-number">{lot[0]}</span>
-                  )}
-                  <span className="grow">
-                    <small>Espacio {lot[0]}</small>
-                    <h3>{selectedStand?.name || 'Expositor por publicar'}</h3>
-                  </span>
-                  <button
-                    className="icon-button"
-                    aria-label="Cerrar selección"
-                    onClick={() => setSelectedLot(null)}
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                {selectedStand && (
-                  <Link className="button" to={`/stands/${selectedStand.id}`}>
-                    Ver perfil
-                    <ChevronRight size={16} />
-                  </Link>
-                )}
               </div>
             )}
+            <div className="indoor-zoom">
+              <button aria-label="Acercar mapa" onClick={() => camera.current?.zoom(1.2)}>
+                <Plus size={21} />
+              </button>
+              <button aria-label="Alejar mapa" onClick={() => camera.current?.zoom(1 / 1.2)}>
+                <Minus size={21} />
+              </button>
+              <button aria-label="Restablecer mapa" onClick={() => camera.current?.reset()}>
+                <RotateCcw size={18} />
+              </button>
+              <button
+                aria-label={
+                  gps.status === 'active' || gps.status === 'waiting'
+                    ? 'Detener GPS'
+                    : 'Mi ubicación'
+                }
+                aria-pressed={gps.status === 'active'}
+                onClick={() => {
+                  if (gps.status === 'active' || gps.status === 'waiting') gps.stop();
+                  else setLocationDialog(true);
+                }}
+              >
+                <Navigation size={18} />
+              </button>
+            </div>
           </>
         )}
-        {general && (
-          <div className="overview-modes indoor-modes">
+        {routing && requestedStand && (
+          <div className="route-indicator" role="status">
+            <Navigation size={15} />
+            <span>Ruta orientativa · {requestedStand.boothCode}</span>
+            {general && destinationPlan && (
+              <button
+                onClick={() =>
+                  setParams(
+                    { plan: destinationPlan.id, view: '2d', stand: requestedStand.id },
+                    { replace: true },
+                  )
+                }
+              >
+                Ver interior
+              </button>
+            )}
+            <button aria-label="Quitar recorrido" onClick={stopRoute}>
+              <X size={16} />
+            </button>
+          </div>
+        )}
+        {!general && gps.position && (
+          <div className="map-gps-indicator" role="status">
+            GPS relativo · ±{Math.round(gps.accuracy || 0)} m
+          </div>
+        )}
+        <div className="map-footer-controls">
+          <div className="indoor-modes">
             <button aria-pressed={mode === '2d'} onClick={() => changeMode('2d')}>
               2D
             </button>
@@ -617,49 +500,124 @@ export default function CampusMap() {
               3D
             </button>
           </div>
-        )}
-      </div>
-      <div className="indoor-statusbar">
-        <span aria-live="polite">
-          {gps.status === 'waiting'
-            ? 'Buscando señal…'
-            : gps.status === 'active'
-              ? `GPS relativo · ±${Math.round(gps.accuracy || 0)} m`
-              : gps.status === 'paused'
-                ? 'GPS pausado · pulsa Mi ubicación'
-                : lastPoint
-                  ? 'Última ubicación por NFC'
-                  : 'Toca un espacio para explorarlo'}
-        </span>
-        <button disabled={!nfcAvailable() || busy} onClick={() => void locateNfc()}>
-          <Nfc size={16} />
-          {busy ? 'Leyendo…' : 'Ubicarme con NFC'}
-        </button>
-      </div>
-      {(message || gps.error || outside || failed) && (
-        <div className="indoor-notices">
-          {message && (
-            <div className="map-message" role="status">
-              <span>{message}</span>
-              <button
-                aria-label={busy ? 'Cancelar lectura NFC' : 'Cerrar mensaje del mapa'}
-                onClick={() => (busy ? abort.current?.abort() : setMessage(''))}
-              >
-                <X size={16} />
-              </button>
-            </div>
-          )}
-          {gps.error && <p role="alert">{gps.error}</p>}
-          {outside && (
-            <p role="status">
-              El desplazamiento relativo quedó fuera del plano. Detén GPS y vuelve a activarlo para
-              iniciar otro recorrido.
-            </p>
-          )}
-          {failed && (
-            <p role="status">Vista 2D activada: el dispositivo no pudo iniciar el mapa 3D.</p>
+          {requestedStand && destination && (
+            <button className="map-route-button" onClick={openRoute}>
+              <Navigation size={17} />
+              {routing ? 'Cambiar inicio' : 'Cómo llegar'}
+            </button>
           )}
         </div>
+      </div>
+      {failed && (
+        <p className="map-render-notice" role="status">
+          Vista 2D activada: no se pudo iniciar el 3D.
+        </p>
+      )}
+      {gps.error && (
+        <p className="map-render-notice" role="alert">
+          {gps.error}
+        </p>
+      )}
+      {locationDialog && (
+        <Modal title="Ubicación relativa" onClose={() => setLocationDialog(false)}>
+          <p>
+            El GPS interior es aproximado. Confirma desde qué punto del plano empiezas; tus
+            desplazamientos moverán el avatar a partir de allí.
+          </p>
+          <label className="route-origin-field">
+            Estoy en
+            <select
+              aria-label="Punto inicial del GPS"
+              value={gpsAnchor}
+              onChange={(e) => setGpsAnchor(e.target.value)}
+            >
+              <option value="entry">Ingreso de {plan.name}</option>
+              {knownPoint?.planId === plan.id && (
+                <option value="nfc">Última visita NFC registrada</option>
+              )}
+            </select>
+          </label>
+          <button
+            className="button"
+            onClick={() => {
+              gps.start(
+                gpsAnchor === 'nfc' && knownPoint?.planId === plan.id ? knownPoint : plan.origin,
+              );
+              camera.current?.reset();
+              setLocationDialog(false);
+            }}
+          >
+            Iniciar GPS relativo
+          </button>
+          <p className="footnote">
+            No representa una ubicación absoluta ni identifica la planta. Puede perder precisión
+            dentro del recinto.
+          </p>
+        </Modal>
+      )}
+      {sheetOpen && (
+        <BottomSheet title={selectedStand?.name || 'Espacio ' + lot![0]} onClose={closeSheet}>
+          <div className="sheet-stand-summary">
+            {selectedStand ? (
+              <CategoryTile category={selectedStand.category} />
+            ) : (
+              <span className="sheet-lot-icon">
+                <Store size={25} />
+              </span>
+            )}
+            <span>
+              <strong>{selectedStand?.boothCode || 'Espacio ' + lot![0]}</strong>
+              <small>{selectedStand ? plan.name : 'Expositor por publicar'}</small>
+            </span>
+          </div>
+          {selectedStand && (
+            <div className="sheet-actions">
+              <Link className="button" to={'/stands/' + selectedStand.id} onClick={closeSheet}>
+                Ver perfil
+                <ChevronRight size={16} />
+              </Link>
+              {destination && (
+                <button className="button secondary" onClick={openRoute}>
+                  <Navigation size={17} />
+                  Cómo llegar
+                </button>
+              )}
+            </div>
+          )}
+        </BottomSheet>
+      )}
+      {routeDialog && requestedStand && (
+        <Modal title="Cómo llegar" onClose={() => setRouteDialog(false)}>
+          <p>
+            Elige tu punto de partida para llegar a <strong>{requestedStand.name}</strong>. El
+            recorrido es orientativo.
+          </p>
+          <label className="route-origin-field">
+            Punto de partida
+            <select
+              aria-label="Punto de inicio del recorrido"
+              value={routeSource}
+              onChange={(e) => setRouteSource(e.target.value)}
+            >
+              <option value="">Selecciona un ingreso</option>
+              {knownPoint && <option value="nfc">Última visita NFC registrada</option>}
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  Ingreso · {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button className="button" disabled={!sourcePlan} onClick={startRoute}>
+            <Navigation size={18} />
+            Trazar recorrido
+          </button>
+          {sourcePlan && destinationPlan && sourcePlan.level !== destinationPlan.level && (
+            <p className="footnote">
+              El destino está en otra planta; utiliza las escaleras o el ascensor señalizados.
+            </p>
+          )}
+        </Modal>
       )}
       {listing && (
         <Modal title="Stands" onClose={() => setListing(false)}>
@@ -670,42 +628,34 @@ export default function CampusMap() {
                 <span className="grow">
                   <strong>{s.name}</strong>
                   <small>
-                    {s.boothCode} · {plans.find((p) => p.id === s.planId)?.name}
+                    {s.boothCode} ·{' '}
+                    {plans.find((p) => p.id === s.planId)?.name || 'Ubicación por publicar'}
                   </small>
                 </span>
-                <ChevronRight size={18} />
+                <ChevronRight size={17} />
               </button>
             ))}
           </div>
         </Modal>
       )}
       {help && (
-        <Modal title="Mapa y movimiento GPS" onClose={() => setHelp(false)}>
-          <div className="stack">
-            <p>
-              2D muestra los planos originales. El 3D usa sus mismos contornos, tamaños, espacios
-              numerados y servicios.
-            </p>
-            <h3>Muévete con tu avatar</h3>
-            <p>
-              Pulsa Mi ubicación y permite el GPS. Desde ese punto, tus desplazamientos mueven el
-              avatar. Por ahora es un recorrido relativo: escala provisional de 10 unidades del
-              plano por metro, con norte hacia arriba; todavía no representa tu posición exacta
-              dentro del recinto.
-            </p>
-            <p>
-              El GPS puede perder precisión dentro de los edificios. Los pasos pequeños pueden no
-              detectarse y una señal débil pausa el movimiento. Al cambiar de planta o volver desde
-              otra pestaña puedes reiniciar Mi ubicación.
-            </p>
-            <h3>NFC</h3>
-            <p>Una etiqueta de un stand conocido te lleva a su espacio. Ejemplo de texto NDEF:</p>
-            <code className="campus-tag-example">FIPAZ:2026:STAND:stand-altura-labs</code>
-            <p>Solo lectura. No se acreditan puntos ni se envía tu ubicación al backend.</p>
-            <button className="button" onClick={() => setHelp(false)}>
-              Entendido
-            </button>
-          </div>
+        <Modal title="Explora el recinto" onClose={() => setHelp(false)}>
+          <p>
+            El mapa abre en 2D. Toca un bloque, cambia de planta o busca una empresa. Toca un
+            espacio para abrir su ficha inferior.
+          </p>
+          <p>
+            <strong>Cómo llegar</strong> permite elegir un ingreso o la última visita NFC
+            registrada. La lectura de tarjetas se realiza desde Check-in.
+          </p>
+          <p>
+            El recinto general es un esquema basado en la fotografía oficial; no está
+            georreferenciado. Los recorridos orientan entre accesos y pasillos, sin representar una
+            posición GPS exacta.
+          </p>
+          <button className="button secondary" onClick={() => setHelp(false)}>
+            Entendido
+          </button>
         </Modal>
       )}
     </section>
