@@ -13,6 +13,9 @@ export interface CampusCamera {
 interface Props {
   plan: PlanGeometry;
   lots?: Lot[];
+  lotColors?: string[];
+  lotHeights?: number[];
+  route?: PlanPosition[];
   showAvatar?: boolean;
   dark: boolean;
   aerial: boolean;
@@ -194,14 +197,30 @@ export default function IndoorScene(props: Props) {
       const p = toWorld(plan, { x: x + w / 2, y: y + h / 2 }),
         bw = w * WORLD_SCALE,
         bd = h * WORLD_SCALE;
-      const base = box(bw - 0.04, 1.2, bd - 0.04, cream, p.x, 0.72, p.z);
+      const height = props.lotHeights?.[index] ?? 1.2;
+      const base = box(bw - 0.04, height, bd - 0.04, cream, p.x, height / 2 + 0.12, p.z);
       base.userData.lotIndex = index;
       pickable.push(base);
-      const top = box(bw - 0.075, 0.12, bd - 0.075, accent, p.x, 1.38, p.z);
+      const top = box(
+        bw - 0.075,
+        0.12,
+        bd - 0.075,
+        props.lotColors?.[index] ? mat(props.lotColors[index]) : accent,
+        p.x,
+        height + 0.18,
+        p.z,
+      );
       top.userData.lotIndex = index;
       pickable.push(top);
       box(Math.max(0.1, bw - 0.22), 0.5, 0.035, glass, p.x, 0.7, p.z + bd / 2);
-      label(index, p.x, p.z, 1.46, Math.min(bw * 0.9, 1.7), Math.min(bd * 0.9, 1.3));
+      label(
+        index,
+        p.x,
+        p.z,
+        height + 0.26,
+        Math.min(bw * 0.9, props.lotColors ? 5 : 1.7),
+        Math.min(bd * 0.9, 1.3),
+      );
     });
     plan.structures.forEach((s, i) => {
       if (s.x !== undefined && s.y !== undefined) {
@@ -215,6 +234,14 @@ export default function IndoorScene(props: Props) {
     materials.push(highlightMaterial);
     const highlight = new THREE.LineLoop(highlightGeo, highlightMaterial);
     scene.add(highlight);
+    let routeGeometry = new THREE.BufferGeometry();
+    const routeMaterial = mat(dark ? '#d5f24a' : '#132d46', {
+      emissive: dark ? '#d5f24a' : '#132d46',
+      emissiveIntensity: 0.2,
+    });
+    const routeMesh = new THREE.Mesh(routeGeometry, routeMaterial);
+    scene.add(routeMesh);
+    let previousRoute: PlanPosition[] | undefined;
     const avatar = new THREE.Group();
     avatar.visible = props.showAvatar !== false;
     scene.add(avatar);
@@ -363,6 +390,28 @@ export default function IndoorScene(props: Props) {
       const dt = Math.min((time - lastTime) / 1000, 0.05);
       lastTime = time;
       const current = latest.current;
+      if (avatar.visible !== (current.showAvatar !== false)) {
+        avatar.visible = current.showAvatar !== false;
+        dirty = true;
+      }
+      if (current.route !== previousRoute) {
+        previousRoute = current.route;
+        routeGeometry.dispose();
+        const path = new THREE.CurvePath<THREE.Vector3>();
+        const vertices = (current.route ?? []).map((p) => {
+          const w = toWorld(plan, p);
+          return new THREE.Vector3(w.x, 0.57, w.z);
+        });
+        for (let i = 1; i < vertices.length; i++)
+          path.add(new THREE.LineCurve3(vertices[i - 1], vertices[i]));
+        routeGeometry =
+          vertices.length > 1
+            ? new THREE.TubeGeometry(path, Math.max(8, vertices.length * 3), 0.1, 6, false)
+            : new THREE.BufferGeometry();
+        routeMesh.geometry = routeGeometry;
+        routeMesh.visible = vertices.length > 1;
+        dirty = true;
+      }
       if (current.aerial !== previousAerial) {
         previousAerial = current.aerial;
         reset();
@@ -431,6 +480,7 @@ export default function IndoorScene(props: Props) {
       renderer.domElement.removeEventListener('pointerdown', downHandler);
       renderer.domElement.removeEventListener('click', clickHandler);
       geometries.forEach((g) => g.dispose());
+      routeGeometry.dispose();
       materials.forEach((m) => m.dispose());
       textures.forEach((t) => t.dispose());
       sun.shadow.dispose();

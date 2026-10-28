@@ -26,6 +26,8 @@ export default function IndoorPlan({
   onSelectLot,
   cameraRef,
   stands,
+  route,
+  showAvatar = true,
 }: {
   plan: PlanGeometry;
   position: PlanPosition;
@@ -33,6 +35,8 @@ export default function IndoorPlan({
   onSelectLot: (index: number) => void;
   cameraRef: React.RefObject<CampusCamera | null>;
   stands?: readonly Stand[];
+  route?: PlanPosition[];
+  showAvatar?: boolean;
 }) {
   return (
     <div className="indoor-plan">
@@ -105,16 +109,38 @@ export default function IndoorPlan({
                 </g>
               );
             })}
-            <g
-              className="indoor-avatar"
-              data-avatar-x={position.x}
-              data-avatar-y={position.y}
-              transform={`translate(${position.x} ${position.y})`}
-              aria-label="Avatar"
-            >
-              <circle r={19} fill="#219bea" opacity={0.18} />
-              <circle r={10} fill="#087ec2" stroke="white" strokeWidth={4} />
-            </g>
+            {route && route.length > 1 && (
+              <>
+                <polyline
+                  points={route.map((p) => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke="white"
+                  strokeWidth={10}
+                  strokeLinejoin="round"
+                />
+                <polyline
+                  data-route="indoor"
+                  points={route.map((p) => `${p.x},${p.y}`).join(' ')}
+                  fill="none"
+                  stroke="#132d46"
+                  strokeWidth={5}
+                  strokeDasharray="10 5"
+                  strokeLinejoin="round"
+                />
+              </>
+            )}
+            {showAvatar && (
+              <g
+                className="indoor-avatar"
+                data-avatar-x={position.x}
+                data-avatar-y={position.y}
+                transform={`translate(${position.x} ${position.y})`}
+                aria-label="Avatar"
+              >
+                <circle r={19} fill="#219bea" opacity={0.18} />
+                <circle r={10} fill="#087ec2" stroke="white" strokeWidth={4} />
+              </g>
+            )}
           </svg>
         </TransformComponent>
       </TransformWrapper>
