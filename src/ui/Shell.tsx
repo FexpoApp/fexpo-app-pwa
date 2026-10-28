@@ -26,6 +26,8 @@ import { bootstrap, flushPending, loadCatalog, syncProgress } from '@/state/live
 import { LIVE, LOCAL } from '@/services/config';
 import { AudioHost } from '@/features/audio/AudioHost';
 import { ConnectionStatus } from './Connection';
+import { Brand } from './Brand';
+import { stopNfcReading } from '@/services/nfc';
 
 const tabs = [
   { path: '/', label: 'Inicio', icon: Home },
@@ -52,6 +54,7 @@ interface InstallEvent extends Event {
 
 export function Shell() {
   const { pathname } = useLocation();
+  useEffect(() => () => stopNfcReading(), [pathname]);
   const navigate = useNavigate();
   const state = useExperience();
   const toast = useUI((s) => s.toast);
@@ -131,7 +134,7 @@ export function Shell() {
     <div className="preview-stage">
       <aside className="preview-rail">
         <Link to="/" className="preview-brand">
-          <span className="brand-mark">F</span>Fexpo<span className="preview-tag">PWA</span>
+          <Brand /><span className="preview-tag">PWA</span>
         </Link>
         <div>
           <span className="eyebrow">TU FERIA, A TU RITMO</span>
@@ -190,7 +193,7 @@ export function Shell() {
         <a className="skip-link" href="#content">
           Ir al contenido
         </a>
-        <header className="app-header">
+        <header className={`app-header ${pathname === '/map' ? 'map-header' : ''}`}>
           {secondary ? (
             <button
               className="icon-button back"
@@ -203,11 +206,12 @@ export function Shell() {
               <ArrowLeft size={23} />
             </button>
           ) : pathname === '/' ? (
-            <Link to="/" className="brand-mark" aria-label="Fexpo, inicio">
-              F
+            <Link to="/" className="header-brand" aria-label="Fexpo, inicio">
+              <Brand />
             </Link>
           ) : null}
-          <span className="header-title">{title}</span>
+          {pathname !== '/' && <span className="header-title">{title}</span>}
+          {pathname === '/' && <span className="header-spacer" />}
           <Points value={state.points} />
           <Link
             className="icon-button bell-button"
