@@ -1,4 +1,5 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { matchesStand } from '@/services/stand-search';
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   Search,
@@ -28,14 +29,11 @@ import { useCampusLocation } from './location';
 import { CAMPUS_POINTS, lotAtPublishedPosition, pointsForStands, standAtLotIn } from './model';
 import { useRelativeGps } from './gps';
 import IndoorPlan from './IndoorPlan';
+import { CampusOverview } from './CampusOverview';
+import { routeThroughAisles } from './routing';
 import type { CampusCamera } from './IndoorScene';
 import './campus.css';
 const Scene = lazy(() => import('./IndoorScene'));
-const norm = (s: string) =>
-  s
-    .normalize('NFD')
-    .replace(/\p{Diacritic}/gu, '')
-    .toLowerCase();
 const buildings = [
   { id: 'red', name: 'Bloque Rojo' },
   { id: 'yellow', name: 'Bloque Amarillo' },
@@ -92,13 +90,28 @@ export default function CampusMap() {
   const last = useCampusLocation((s) => s.last),
     gps = useRelativeGps(plan.id);
   const lastPoint = points.find((p) => p.id === last?.standId && p.planId === plan.id);
+  const knownPoint = points.find((p) => p.id === last?.standId);
+  const [manualSource, setManualSource] = useState('');
+  const sourcePlan = plans.find((p) => p.id === (manualSource || knownPoint?.planId));
+  const destination = points.find((p) => p.id === requestedStand?.id);
+  const destinationPlan = plans.find((p) => p.id === destination?.planId);
+  const general =
+    params.get('plan') === 'general' ||
+    (!params.get('plan') &&
+      (!requestedStand || (sourcePlan && sourcePlan.zoneId !== destinationPlan?.zoneId)));
   const position = gps.position || (lastPoint ? { x: lastPoint.x, y: lastPoint.y } : plan.origin);
+  const routeOrigin = !manualSource && knownPoint?.planId === plan.id ? knownPoint : plan.origin;
+  const route = useMemo(
+    () =>
+      destination && destination.planId === plan.id && sourcePlan
+        ? routeThroughAisles(plan, routeOrigin, destination)
+        : [],
+    [plan.id, destination?.id, routeOrigin.x, routeOrigin.y, sourcePlan?.id],
+  );
   const lot = selectedLot !== null ? PLAN_LOTS[plan.id][selectedLot] : null;
   const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
   const floors = plans.filter((p) => p.zoneId === plan.zoneId);
-  const results = stands.filter((s) =>
-    norm(`${s.name} ${s.boothCode} ${s.tags.join(' ')}`).includes(norm(query)),
-  );
+  const results = stands.filter((stand) => matchesStand(stand, query));
   const [vx, vy, vw, vh] = plan.viewBox.split(' ').map(Number);
   const outside =
     !!gps.position &&
@@ -140,7 +153,11 @@ export default function CampusMap() {
   const changeMode = (view: '2d' | '3d') => {
     setFailed(false);
     setParams(
-      { plan: plan.id, view, ...(requestedStand ? { stand: requestedStand.id } : {}) },
+      {
+        plan: general ? 'general' : plan.id,
+        view,
+        ...(requestedStand ? { stand: requestedStand.id } : {}),
+      },
       { replace: true },
     );
   };
@@ -149,7 +166,7 @@ export default function CampusMap() {
     setQuery('');
     setListing(false);
     setFollow(false);
-    setParams({ plan: stand.planId, view: mode, stand: id }, { replace: true });
+    setParams({ plan: 'general', view: mode, stand: id }, { replace: true });
   };
   const selectLot = (index: number) => {
     setSelectedLot(index);
@@ -167,7 +184,8 @@ export default function CampusMap() {
       audioFeedback.request('nfcRead');
       const id = useCampusLocation.getState().locate(reading.records, points);
       gps.stop(true);
-      select(id);
+      const target = stands.find((s) => s.id === id);
+      if (target) setParams({ plan: target.planId, view: mode, stand: id }, { replace: true });
       setMessage('Última etiqueta localizada. Esta lectura no acredita puntos.');
     } catch (e) {
       if (controller.signal.aborted) setMessage('Lectura cancelada.');
@@ -228,38 +246,58 @@ export default function CampusMap() {
             <Info size={20} />
           </button>
         </div>
-        <div className="indoor-floor-row">
-          <label className="indoor-building">
-            <span style={{ background: plan.color }} />
-            <select
-              aria-label="Pabellón"
-              value={plan.zoneId}
-              onChange={(e) => changePlan(plans.find((p) => p.zoneId === e.target.value)!.id)}
-            >
-              {buildings
-                .filter((b) => plans.some((p) => p.zoneId === b.id))
-                .map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <div className="indoor-floor-tabs" aria-label="Planta">
-            {floors.map((p) => (
-              <button key={p.id} aria-pressed={p.id === plan.id} onClick={() => changePlan(p.id)}>
-                {p.level === 'Planta baja'
-                  ? 'Baja'
-                  : p.level === 'Planta alta'
-                    ? 'Alta'
-                    : 'Exterior'}
+        <div className="building-chips" aria-label="Bloques del recinto">
+          <button
+            aria-pressed={!!general}
+            onClick={() =>
+              setParams(
+                {
+                  plan: 'general',
+                  view: mode,
+                  ...(requestedStand ? { stand: requestedStand.id } : {}),
+                },
+                { replace: true },
+              )
+            }
+          >
+            General
+          </button>
+          {buildings
+            .filter((b) => plans.some((p) => p.zoneId === b.id))
+            .map((b) => (
+              <button
+                key={b.id}
+                aria-pressed={!general && plan.zoneId === b.id}
+                style={
+                  {
+                    '--building-color': plans.find((p) => p.zoneId === b.id)!.color,
+                  } as React.CSSProperties
+                }
+                onClick={() => changePlan(plans.find((p) => p.zoneId === b.id)!.id)}
+              >
+                <span />
+                {b.name.replace('Bloque ', '')}
               </button>
             ))}
-          </div>
+        </div>
+        <div className="indoor-floor-row">
+          {!general && (
+            <div className="indoor-floor-tabs" aria-label="Planta">
+              {floors.map((p) => (
+                <button key={p.id} aria-pressed={p.id === plan.id} onClick={() => changePlan(p.id)}>
+                  {p.level === 'Planta baja'
+                    ? 'Baja'
+                    : p.level === 'Planta alta'
+                      ? 'Alta'
+                      : 'Exterior'}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
         <div className="indoor-plan-title">
-          <h2>{plan.name}</h2>
-          <small>{PLAN_LOTS[plan.id].length} espacios</small>
+          <h2>{general ? 'Campo ferial Chuquiago Marka' : plan.name}</h2>
+          <small>{general ? 'FIPAZ 2026' : `${PLAN_LOTS[plan.id].length} espacios`}</small>
         </div>
         {query && (
           <div className="indoor-results">
@@ -280,175 +318,304 @@ export default function CampusMap() {
           </div>
         )}
       </div>
+      {requestedStand && (
+        <div className="route-summary">
+          <div>
+            <strong>{requestedStand.name}</strong>
+            <small>
+              {requestedStand.boothCode} · {destinationPlan?.name || 'Ubicación por publicar'}
+            </small>
+          </div>
+          <label>
+            Desde{' '}
+            <select
+              aria-label="Punto de inicio del recorrido"
+              value={manualSource || (knownPoint ? 'nfc' : '')}
+              onChange={(e) => {
+                setManualSource(e.target.value === 'nfc' ? '' : e.target.value);
+                setParams(
+                  { plan: 'general', view: mode, stand: requestedStand.id },
+                  { replace: true },
+                );
+              }}
+            >
+              <option value="" disabled>
+                Elige dónde estás
+              </option>
+              {knownPoint && <option value="nfc">Última lectura NFC</option>}
+              {plans.map((p) => (
+                <option key={p.id} value={p.id}>
+                  Ingreso · {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {sourcePlan && (
+            <small>
+              Ruta orientativa ·{' '}
+              {sourcePlan.id !== destinationPlan?.id &&
+              sourcePlan.zoneId === destinationPlan?.zoneId
+                ? 'Cambia de planta por escaleras o ascensor.'
+                : general
+                  ? 'Sigue los accesos entre bloques.'
+                  : route.length
+                    ? 'Sigue los pasillos hasta el stand.'
+                    : 'No se encontró un pasillo continuo en este plano.'}
+            </small>
+          )}
+          {general && destinationPlan && (
+            <button
+              className="button secondary"
+              onClick={() =>
+                setParams(
+                  { plan: destinationPlan.id, view: mode, stand: requestedStand.id },
+                  { replace: true },
+                )
+              }
+            >
+              Ver stand en {destinationPlan.name}
+              <ChevronRight size={15} />
+            </button>
+          )}
+          {!general && (
+            <Link className="route-profile-link" to={`/stands/${requestedStand.id}`}>
+              Ver perfil <ChevronRight size={14} />
+            </Link>
+          )}
+          <button
+            className="route-close icon-button"
+            aria-label="Cerrar recorrido"
+            onClick={() =>
+              setParams({ plan: general ? 'general' : plan.id, view: mode }, { replace: true })
+            }
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <div
         className="indoor-viewer"
         data-mode={mode}
-        data-plan-id={plan.id}
+        data-plan-id={general ? 'general' : plan.id}
         data-avatar-x={position.x}
         data-avatar-y={position.y}
         data-position-source={gps.position ? 'gps' : lastPoint ? 'nfc' : 'origin'}
       >
-        {mode === '2d' ? (
-          <IndoorPlan
-            plan={plan}
-            position={position}
-            selectedLot={selectedLot}
-            onSelectLot={selectLot}
-            cameraRef={camera}
-            stands={stands}
+        {general ? (
+          <CampusOverview
+            mode={mode}
+            dark={dark}
+            from={sourcePlan?.zoneId}
+            to={destinationPlan?.zoneId}
+            onBuilding={(zone) => {
+              const target = plans.find((p) => p.zoneId === zone);
+              if (target)
+                setParams(
+                  {
+                    plan: target.id,
+                    view: mode,
+                    ...(destinationPlan?.zoneId === zone && requestedStand
+                      ? { stand: requestedStand.id, plan: destinationPlan.id }
+                      : {}),
+                  },
+                  { replace: true },
+                );
+            }}
+            onFailure={() => {
+              setFailed(true);
+              setParams(
+                {
+                  plan: 'general',
+                  view: '2d',
+                  ...(requestedStand ? { stand: requestedStand.id } : {}),
+                },
+                { replace: true },
+              );
+            }}
           />
         ) : (
-          <Suspense
-            fallback={
-              <div className="campus-loading" role="status">
-                Preparando el plano 3D…
+          <>
+            {mode === '2d' ? (
+              <IndoorPlan
+                plan={plan}
+                position={position}
+                selectedLot={selectedLot}
+                onSelectLot={selectLot}
+                cameraRef={camera}
+                stands={stands}
+                route={route}
+                showAvatar={!!gps.position || !!lastPoint || manualSource === plan.id}
+              />
+            ) : (
+              <Suspense
+                fallback={
+                  <div className="campus-loading" role="status">
+                    Preparando el plano 3D…
+                  </div>
+                }
+              >
+                <Scene
+                  plan={plan}
+                  dark={dark}
+                  aerial={aerial}
+                  position={position}
+                  follow={follow}
+                  route={route}
+                  showAvatar={!!gps.position || !!lastPoint || manualSource === plan.id}
+                  selectedLot={selectedLot}
+                  onSelectLot={selectLot}
+                  cameraRef={camera}
+                  onFailure={() => {
+                    setFailed(true);
+                    setParams({ plan: plan.id, view: '2d' }, { replace: true });
+                  }}
+                />
+              </Suspense>
+            )}
+            {!general && mode === '3d' && (
+              <div className="indoor-markers" key={plan.id}>
+                {plan.structures
+                  .filter((s) => s.x !== undefined && s.y !== undefined)
+                  .map((s, i) => (
+                    <span
+                      className="indoor-service"
+                      key={`service-${i}`}
+                      data-plan-x={s.x}
+                      data-plan-y={s.y}
+                      data-elevation=".6"
+                    >
+                      {s.label}
+                    </span>
+                  ))}
+                {points
+                  .filter((p) => p.planId === plan.id)
+                  .map((p) => {
+                    const s = stands.find((s) => s.id === p.id)!;
+                    return (
+                      <button
+                        className="indoor-marker"
+                        key={p.id}
+                        data-plan-x={p.x}
+                        data-plan-y={p.y}
+                        aria-label={`Ver ${s.name}, stand ${s.boothCode}`}
+                        onClick={() => select(p.id)}
+                      >
+                        <Store size={16} />
+                        <span>{s.boothCode}</span>
+                      </button>
+                    );
+                  })}
               </div>
-            }
-          >
-            <Scene
-              plan={plan}
-              dark={dark}
-              aerial={aerial}
-              position={position}
-              follow={follow}
-              selectedLot={selectedLot}
-              onSelectLot={selectLot}
-              cameraRef={camera}
-              onFailure={() => {
-                setFailed(true);
-                setParams({ plan: plan.id, view: '2d' }, { replace: true });
-              }}
-            />
-          </Suspense>
-        )}
-        {mode === '3d' && (
-          <div className="indoor-markers" key={plan.id}>
-            {plan.structures
-              .filter((s) => s.x !== undefined && s.y !== undefined)
-              .map((s, i) => (
-                <span
-                  className="indoor-service"
-                  key={`service-${i}`}
-                  data-plan-x={s.x}
-                  data-plan-y={s.y}
-                  data-elevation=".6"
-                >
-                  {s.label}
-                </span>
-              ))}
-            {points
-              .filter((p) => p.planId === plan.id)
-              .map((p) => {
-                const s = stands.find((s) => s.id === p.id)!;
-                return (
-                  <button
-                    className="indoor-marker"
-                    key={p.id}
-                    data-plan-x={p.x}
-                    data-plan-y={p.y}
-                    aria-label={`Ver ${s.name}, stand ${s.boothCode}`}
-                    onClick={() => select(p.id)}
-                  >
-                    <Store size={16} />
-                    <span>{s.boothCode}</span>
+            )}
+            <div className="indoor-camera-top">
+              {mode === '3d' && (
+                <>
+                  <button aria-label="Girar mapa" onClick={() => camera.current?.rotate()}>
+                    <Compass size={20} />
                   </button>
-                );
-              })}
-          </div>
-        )}
-        <div className="indoor-camera-top">
-          {mode === '3d' && (
-            <>
-              <button aria-label="Girar mapa" onClick={() => camera.current?.rotate()}>
-                <Compass size={20} />
+                  <button
+                    aria-label="Alternar vista aérea"
+                    aria-pressed={aerial}
+                    onClick={() => setAerial(!aerial)}
+                  >
+                    <Layers size={20} />
+                  </button>
+                </>
+              )}
+            </div>
+            <div className="indoor-zoom">
+              <button aria-label="Acercar mapa" onClick={() => camera.current?.zoom(1.2)}>
+                <Plus size={22} />
+              </button>
+              <button aria-label="Alejar mapa" onClick={() => camera.current?.zoom(1 / 1.2)}>
+                <Minus size={22} />
+              </button>
+              <button aria-label="Restablecer mapa" onClick={() => camera.current?.reset()}>
+                <RotateCcw size={19} />
               </button>
               <button
-                aria-label="Alternar vista aérea"
-                aria-pressed={aerial}
-                onClick={() => setAerial(!aerial)}
+                aria-label="Centrar avatar"
+                aria-pressed={follow}
+                onClick={() => {
+                  setFollow(!follow);
+                  camera.current?.follow();
+                }}
               >
-                <Layers size={20} />
+                <LocateFixed size={21} />
               </button>
-            </>
-          )}
-        </div>
-        <div className="indoor-zoom">
-          <button aria-label="Acercar mapa" onClick={() => camera.current?.zoom(1.2)}>
-            <Plus size={22} />
-          </button>
-          <button aria-label="Alejar mapa" onClick={() => camera.current?.zoom(1 / 1.2)}>
-            <Minus size={22} />
-          </button>
-          <button aria-label="Restablecer mapa" onClick={() => camera.current?.reset()}>
-            <RotateCcw size={19} />
-          </button>
-          <button
-            aria-label="Centrar avatar"
-            aria-pressed={follow}
-            onClick={() => {
-              setFollow(!follow);
-              camera.current?.follow();
-            }}
-          >
-            <LocateFixed size={21} />
-          </button>
-        </div>
-        <div className="indoor-view-bottom">
-          <div className="indoor-modes">
+            </div>
+            <div className="indoor-view-bottom">
+              <div className="indoor-modes">
+                <button aria-pressed={mode === '2d'} onClick={() => changeMode('2d')}>
+                  2D
+                </button>
+                <button aria-pressed={mode === '3d'} onClick={() => changeMode('3d')}>
+                  3D
+                </button>
+              </div>
+              {!general && (
+                <button
+                  className={`indoor-gps ${gps.status === 'active' ? 'active' : ''}`}
+                  aria-label={
+                    gps.status === 'active' || gps.status === 'waiting'
+                      ? 'Detener GPS'
+                      : 'Mi ubicación'
+                  }
+                  onClick={toggleGps}
+                >
+                  {gps.status === 'active' || gps.status === 'waiting' ? (
+                    <Pause size={19} />
+                  ) : (
+                    <Navigation size={19} />
+                  )}
+                  <span>
+                    {gps.status === 'waiting'
+                      ? 'Buscando GPS…'
+                      : gps.status === 'active'
+                        ? 'GPS activo'
+                        : 'Mi ubicación'}
+                  </span>
+                </button>
+              )}
+            </div>
+            {!general && lot && !(requestedStand && sourcePlan) && (
+              <div className="indoor-selection">
+                <div className="row">
+                  {selectedStand ? (
+                    <CategoryTile category={selectedStand.category} />
+                  ) : (
+                    <span className="indoor-lot-number">{lot[0]}</span>
+                  )}
+                  <span className="grow">
+                    <small>Espacio {lot[0]}</small>
+                    <h3>{selectedStand?.name || 'Expositor por publicar'}</h3>
+                  </span>
+                  <button
+                    className="icon-button"
+                    aria-label="Cerrar selección"
+                    onClick={() => setSelectedLot(null)}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+                {selectedStand && (
+                  <Link className="button" to={`/stands/${selectedStand.id}`}>
+                    Ver perfil
+                    <ChevronRight size={16} />
+                  </Link>
+                )}
+              </div>
+            )}
+          </>
+        )}
+        {general && (
+          <div className="overview-modes indoor-modes">
             <button aria-pressed={mode === '2d'} onClick={() => changeMode('2d')}>
               2D
             </button>
             <button aria-pressed={mode === '3d'} onClick={() => changeMode('3d')}>
               3D
             </button>
-          </div>
-          <button
-            className={`indoor-gps ${gps.status === 'active' ? 'active' : ''}`}
-            aria-label={
-              gps.status === 'active' || gps.status === 'waiting' ? 'Detener GPS' : 'Mi ubicación'
-            }
-            onClick={toggleGps}
-          >
-            {gps.status === 'active' || gps.status === 'waiting' ? (
-              <Pause size={19} />
-            ) : (
-              <Navigation size={19} />
-            )}
-            <span>
-              {gps.status === 'waiting'
-                ? 'Buscando GPS…'
-                : gps.status === 'active'
-                  ? 'GPS activo'
-                  : 'Mi ubicación'}
-            </span>
-          </button>
-        </div>
-        {lot && (
-          <div className="indoor-selection">
-            <div className="row">
-              {selectedStand ? (
-                <CategoryTile category={selectedStand.category} />
-              ) : (
-                <span className="indoor-lot-number">{lot[0]}</span>
-              )}
-              <span className="grow">
-                <small>Espacio {lot[0]}</small>
-                <h3>{selectedStand?.name || 'Expositor por publicar'}</h3>
-              </span>
-              <button
-                className="icon-button"
-                aria-label="Cerrar selección"
-                onClick={() => setSelectedLot(null)}
-              >
-                <X size={18} />
-              </button>
-            </div>
-            {selectedStand && (
-              <Link className="button" to={`/stands/${selectedStand.id}`}>
-                Ver perfil
-                <ChevronRight size={16} />
-              </Link>
-            )}
           </div>
         )}
       </div>
