@@ -66,41 +66,37 @@ test('cancelar la lectura no registra visitas', async ({ page }) => {
   await expect(page.getByRole('dialog')).toHaveCount(0);
 });
 
-test('búsqueda, cambio de planta y perfil del stand', async ({ page }) => {
-  await page.goto('/map');
-  await page.getByRole('button', { name: '2D', exact: true }).click();
+test('búsqueda traza una orientación desde un origen elegido y abre el perfil', async ({
+  page,
+}) => {
+  await page.goto('/map?view=2d');
+  await expect(page.locator('.campus-overview')).toBeVisible();
   await page.getByRole('textbox', { name: 'Buscar stands y empresas' }).fill('altura');
   await page.getByRole('button', { name: /Altura Labs/ }).click();
-  await expect(page.getByRole('heading', { name: 'Pabellón Bolivia' })).toBeVisible();
+  await page
+    .getByRole('combobox', { name: 'Punto de inicio del recorrido' })
+    .selectOption('red-lower');
+  await expect(page.locator('[data-route=campus]')).toBeVisible();
+  await page.getByRole('button', { name: 'Ver stand en Pabellón Bolivia' }).click();
+  await expect(page.locator('[data-route=indoor]')).toBeVisible();
   await page.getByRole('link', { name: 'Ver perfil', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Altura Labs' })).toBeVisible();
-  await page.getByRole('button', { name: 'Guardar stand' }).click();
-  await expect(page.getByRole('button', { name: 'Stand guardado' })).toHaveAttribute(
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Guardado', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
-  await page.getByRole('tab', { name: 'Ofertas' }).click();
-  await page.getByRole('button', { name: 'Ver condiciones de la promoción' }).click();
-  await expect(
-    page.getByRole('button', { name: 'Ver condiciones de la promoción' }),
-  ).toHaveAttribute('aria-pressed', 'true');
 });
-
-test('ruleta y raspadita son visuales y no cambian el saldo', async ({ page }) => {
+test('ejemplo de raspadita no cambia el saldo ni habilita el módulo', async ({ page }) => {
   await page.goto('/stands/stand-altura-labs');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('tab', { name: 'Dinámicas' }).click();
-  await page.getByRole('button', { name: /Ruleta Gira/ }).click();
-  await page.getByRole('button', { name: 'Girar ruleta demo' }).click();
-  await expect(page.getByRole('button', { name: 'Volver a girar' })).toBeVisible();
+  await page.getByRole('button', { name: 'Ver ejemplo', exact: true }).click();
+  await page.getByRole('button', { name: /Desliza para raspar/ }).click();
+  await expect(page.getByText('¡Sorpresa descubierta!')).toBeVisible();
   await page.getByRole('button', { name: 'Cerrar ventana' }).click();
-  await page.getByRole('button', { name: /Raspa y gana Revela/ }).click();
-  await page.getByRole('button', { name: 'Revelar sin raspar' }).click();
-  await expect(page.getByText('¡Una sorpresa te espera!')).toBeVisible();
-  await page.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await expect(page.getByText('Módulo no habilitado')).toBeVisible();
   await expect(page.locator('.app-header .points-pill')).toContainText('50');
 });
-
 test('la PWA abre rutas y recursos offline después de la primera carga', async ({
   page,
   context,

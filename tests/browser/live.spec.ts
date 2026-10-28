@@ -300,6 +300,8 @@ test('recorrido conectado: NFC, saldo del servidor, sonido 7 y aviso 5 con vibra
   await page.locator('.bottom-nav').getByRole('link', { name: 'Check-in' }).click();
   await page.getByRole('button', { name: 'Leer tarjeta NFC' }).click();
   await emitNfc(page);
+  await emitNfc(page);
+  await emitNfc(page);
   await expect(page.getByRole('dialog', { name: '¡Visita registrada!' })).toBeVisible();
   await expect(page.locator('.app-header .points-pill')).toHaveText('67');
   expect(requests).toHaveLength(1);
@@ -363,8 +365,8 @@ test('Google, QR firmado, favoritos y cierre de sesión sin datos privados', asy
   await page.goto('/my-qr');
   await expect(page.getByRole('img', { name: 'Tu QR personal de Fexpo' })).toBeVisible();
   await page.goto(`/stands/${standId}`);
-  await page.getByRole('button', { name: 'Guardar stand' }).click();
-  await expect(page.getByRole('button', { name: 'Stand guardado' })).toHaveAttribute(
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Guardado', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
@@ -438,7 +440,7 @@ test('audio offline válido y ausencia de caché de API privada', async ({ page,
   await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
   await context.setOffline(true);
   const report = await page.evaluate(async () => {
-    const files = ['matilda-welcome.mp3', 'matilda-nfc.mp3', 'sonido-05.mp3', 'sonido-07.mp3'];
+    const files = ['sonido-05.mp3', 'sonido-07.mp3'];
     const audio = new OfflineAudioContext(1, 44100, 44100);
     const clips = [];
     for (const file of files) {
@@ -459,21 +461,30 @@ test('audio offline válido y ausencia de caché de API privada', async ({ page,
   expect(report.clips.every((clip) => clip.status === 200 && clip.duration > 0)).toBe(true);
   await context.setOffline(false);
 });
-test('catálogo, filtros y favoritos muestran solo los stands elegidos', async ({ page }) => {
+test('catálogo horizontal, categoría completa, búsqueda y guardado', async ({ page }) => {
   await setup(page);
   await page.goto('/stands');
-  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toBeVisible();
-  await page.getByRole('button', { name: 'Gastronomía' }).click();
-  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
+  await expect(
+    page
+      .locator('.poster-rail')
+      .first()
+      .getByRole('link', { name: /Café Altiplano/ }),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Gastronomía Ver todos' }).click();
+  await expect(
+    page.locator('.poster-grid').getByRole('link', { name: /Café Altiplano/ }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: /TecnoAndes/ })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Todos' }).click();
   await page.getByRole('link', { name: /Café Altiplano/ }).click();
-  await page.getByRole('button', { name: 'Guardar stand' }).click();
+  await page.getByRole('button', { name: 'Guardar', exact: true }).click();
+  await expect(page.getByRole('button', { name: 'Guardado', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await page.goto('/stands');
-  await page.getByRole('button', { name: 'Mostrar solo favoritos' }).click();
-  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toHaveCount(0);
+  await page.getByRole('searchbox', { name: 'Buscar stands y empresas' }).fill('tecno');
+  await expect(page.getByRole('link', { name: /TecnoAndes/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Café Altiplano/ })).toHaveCount(0);
 });
 test('editar el nombre valida, guarda y persiste al recargar', async ({ page }) => {
   await setup(page);
@@ -493,61 +504,65 @@ test('editar el nombre valida, guarda y persiste al recargar', async ({ page }) 
   await page.reload();
   await expect(page.getByText('Ana QA', { exact: true })).toBeVisible();
 });
-test('inscripción en actividad informa errores y permite reintentar', async ({ page }) => {
+test('servicios bloqueados muestran ejemplos sin registrar actividades', async ({ page }) => {
   await setup(page);
-  let failed = false;
-  await page.route('**/api/backend?*', async (route) => {
-    const path = new URL(route.request().url()).searchParams.get('path') || '';
-    if (!failed && path.endsWith('/register') && route.request().method() === 'POST') {
-      failed = true;
-      await route.fulfill({
-        status: 503,
-        json: {
-          success: false,
-          error: { code: 'UPSTREAM_UNAVAILABLE', message: 'Inténtalo de nuevo.' },
-        },
-      });
-      return;
-    }
-    await route.fallback();
+  const mutations: string[] = [];
+  page.on('request', (r) => {
+    if (r.method() === 'POST' && r.url().includes('/api/backend')) mutations.push(r.url());
   });
   await page.goto('/stands/' + standId);
-  await page.getByRole('tab', { name: 'Dinámicas' }).click();
-  await expect(page.getByRole('heading', { name: 'Taller de café' })).toBeVisible();
-  await page.getByRole('button', { name: 'Inscribirme' }).click();
-  await expect(page.getByRole('alert')).toContainText('Inténtalo de nuevo');
-  const registration = page.waitForRequest(
-    (r) =>
-      r.method() === 'POST' &&
-      new URL(r.url()).searchParams.get('path')?.endsWith('/register') === true,
-  );
-  await page.getByRole('button', { name: 'Inscribirme' }).click();
-  await registration;
-  await expect(page.getByRole('button', { name: 'Inscripción confirmada' })).toBeDisabled();
+  for (const name of ['Ofertas', 'Dinámicas', 'Catálogo']) {
+    await page.getByRole('tab', { name, exact: true }).click();
+    await expect(page.getByText('Módulo no habilitado')).toBeVisible();
+    await expect(page.getByText('Vista de ejemplo')).toBeVisible();
+  }
+  expect(mutations).toEqual([]);
 });
-test('la caída del catálogo de actividades se muestra y permite reintentar', async ({ page }) => {
+test('conexión comercial requiere consentimiento y confirma la respuesta real', async ({
+  page,
+}) => {
   await setup(page);
-  let failed = false;
+  const leads: Record<string, unknown>[] = [];
   await page.route('**/api/backend?*', async (route) => {
-    const path = new URL(route.request().url()).searchParams.get('path') || '';
-    if (!failed && path.includes('/activities?')) {
-      failed = true;
-      await route.fulfill({
-        status: 503,
-        json: {
-          success: false,
-          error: { code: 'UPSTREAM_UNAVAILABLE', message: 'Actividades no disponibles.' },
-        },
-      });
-      return;
-    }
-    await route.fallback();
+    if (!new URL(route.request().url()).searchParams.get('path')?.endsWith('/leads'))
+      return route.fallback();
+    leads.push(route.request().postDataJSON());
+    await route.fulfill({ json: { success: true, data: { id: 'lead-test-1' }, meta: null } });
   });
   await page.goto('/stands/' + standId);
-  await page.getByRole('tab', { name: 'Dinámicas' }).click();
-  await expect(page.getByRole('alert')).toContainText('Actividades no disponibles');
-  await page.getByRole('button', { name: 'Reintentar actividades' }).click();
-  await expect(page.getByRole('heading', { name: 'Taller de café' })).toBeVisible();
+  await page.getByRole('button', { name: 'Conectar con la empresa' }).click();
+  await expect(page.getByRole('button', { name: 'Enviar interés comercial' })).toBeDisabled();
+  await page.getByRole('textbox', { name: 'Correo de contacto' }).fill('ana@example.test');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Enviar interés comercial' }).click();
+  await expect(page.getByRole('button', { name: 'Interés comercial enviado' })).toBeDisabled();
+  expect(leads).toHaveLength(1);
+  expect(leads[0]).toMatchObject({
+    contact_name: 'Ana Visitante',
+    contact_email: 'ana@example.test',
+    consent_given: true,
+  });
+  expect(
+    JSON.stringify(await page.evaluate(() => ({ ...localStorage, ...sessionStorage }))),
+  ).not.toContain('ana@example.test');
+});
+test('un fallo de conexión comercial no muestra una confirmación falsa', async ({ page }) => {
+  await setup(page);
+  await page.route('**/api/backend?*', async (route) => {
+    if (!new URL(route.request().url()).searchParams.get('path')?.endsWith('/leads'))
+      return route.fallback();
+    await route.fulfill({
+      status: 503,
+      json: { success: false, error: { code: 'UNAVAILABLE', message: 'No disponible.' } },
+    });
+  });
+  await page.goto('/stands/' + standId);
+  await page.getByRole('button', { name: 'Conectar con la empresa' }).click();
+  await page.getByRole('textbox', { name: 'Correo de contacto' }).fill('ana@example.test');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Enviar interés comercial' }).click();
+  await expect(page.getByRole('alert')).toContainText('No disponible');
+  await expect(page.getByRole('button', { name: 'Interés comercial enviado' })).toHaveCount(0);
 });
 test('mapa, ranking y QR personal usan datos del servidor', async ({ page }) => {
   await setup(page);
@@ -622,7 +637,8 @@ test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha rea
   });
   await page.goto('/map');
   await expect(page.getByRole('region', { name: 'Mapa interactivo FIPAZ' })).toBeVisible();
-  await expect(page.getByRole('combobox', { name: 'Pabellón' })).toHaveValue('red');
+  await expect(page.locator('.campus-overview')).toBeVisible();
+  await page.locator('.building-chips').getByRole('button', { name: 'Rojo', exact: true }).click();
   await expect(page.getByRole('button', { name: 'Baja', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
