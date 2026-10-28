@@ -1,4 +1,4 @@
-import { extractStandIds, normalizeUid } from './nfc-payload';
+import { extractStandIds, normalizeUid, validateNfcEvent } from './nfc-payload';
 import { UUID, EVENT_ID } from './config';
 type NdefRecord = {
   recordType: string;
@@ -32,13 +32,10 @@ function decode(records: NdefRecord[]): string[] {
   });
 }
 export function resolveReading(serialNumber: string, records: string[], context?: string) {
+  validateNfcEvent(records, EVENT_ID);
   const ids = extractStandIds(records);
   if (ids.length > 1 || (context && ids.length && context !== ids[0]))
     throw new Error('La tarjeta corresponde a otro stand. Abre su perfil y vuelve a leerla.');
-  for (const record of records) {
-    const event = record.match(/\/e\/([^/]+)\/s\//)?.[1];
-    if (event && event !== EVENT_ID) throw new Error('Esta tarjeta pertenece a otra feria.');
-  }
   const standId = ids[0] || context;
   if (!standId || !UUID.test(standId))
     throw new Error('No se identificó el stand. Abre su perfil y pulsa Registrar visita.');
@@ -55,71 +52,104 @@ export interface RawNfcReading {
   recordTypes: string[];
   readAt: string;
 }
-/** Hardware probe: accepts any readable NDEF tag, without stand/backend validation. */
+let activeStop: (() => void) | undefined;
+export function stopNfcReading() {
+  activeStop?.();
+}
+
+/**
+ * One active reader, one result. After the first reading, keep the foreground
+ * reader briefly active while the tag is removed. Repeated native events only
+ * extend that quiet window: they never resolve a second check-in.
+ * This reduces rapid handoff to Android; it is not an OS-dispatch guarantee.
+ */
 export function readRawNfc(signal: AbortSignal): Promise<RawNfcReading> {
   if (!nfcAvailable())
     return Promise.reject(
       new Error('Este navegador no admite lectura Web NFC. Usa Chrome en Android con NFC.'),
     );
+  if (signal.aborted) return Promise.reject(new DOMException('Lectura cancelada.', 'AbortError'));
+  stopNfcReading();
   return new Promise((resolve, reject) => {
-    const reader = new window.NDEFReader!();
-    const scanController = new AbortController();
-    let finished = false;
-    const finish = (error?: unknown, result?: RawNfcReading) => {
-      if (finished) return;
-      finished = true;
-      clearTimeout(timer);
+    const reader = new window.NDEFReader!(),
+      scanController = new AbortController();
+    let settled = false,
+      closed = false;
+    let quiet: ReturnType<typeof setTimeout> | undefined;
+    let deadline: ReturnType<typeof setTimeout> | undefined;
+    const cleanup = () => {
+      if (closed) return;
+      closed = true;
+      clearTimeout(timeout);
+      clearTimeout(quiet);
+      clearTimeout(deadline);
       reader.removeEventListener('reading', reading);
       reader.removeEventListener('readingerror', failed);
       signal.removeEventListener('abort', abort);
+      document.removeEventListener('visibilitychange', visibility);
+      window.removeEventListener('pagehide', abort);
       scanController.abort();
-      if (error) reject(error);
-      else resolve(result!);
+      if (activeStop === abort) activeStop = undefined;
     };
-    const abort = () => finish(new DOMException('Lectura cancelada.', 'AbortError'));
-    const failed = () =>
-      finish(
-        new Error(
-          'Chrome detectó una tarjeta que no pudo leer. Web NFC necesita etiquetas NDEF; las tarjetas bancarias o sin formato pueden ser incompatibles.',
-        ),
-      );
+    const fail = (error: unknown) => {
+      cleanup();
+      if (!settled) {
+        settled = true;
+        reject(error);
+      }
+    };
+    const abort = () => fail(new DOMException('Lectura cancelada.', 'AbortError'));
+    const visibility = () => {
+      if (document.hidden) abort();
+    };
+    const failed = () => {
+      if (!settled)
+        fail(new Error('No se pudo leer la tarjeta. Usa una etiqueta NFC con formato NDEF.'));
+    };
+    const hold = () => {
+      clearTimeout(quiet);
+      quiet = setTimeout(cleanup, 2000);
+    };
     const reading = (event: Event) => {
+      if (closed) return;
+      if (settled) {
+        hold();
+        return;
+      }
       try {
         const e = event as Reading;
-        const uid =
-          e.serialNumber && /^[0-9a-f:\-\s]+$/i.test(e.serialNumber)
-            ? normalizeUid(e.serialNumber)
-            : null;
-        finish(undefined, {
-          uid,
+        const result: RawNfcReading = {
+          uid:
+            e.serialNumber && /^[0-9a-f:\-\s]+$/i.test(e.serialNumber)
+              ? normalizeUid(e.serialNumber)
+              : null,
           records: decode(e.message.records),
           recordTypes: e.message.records.map((r) => r.recordType),
           readAt: new Date().toISOString(),
-        });
+        };
+        settled = true;
+        clearTimeout(timeout);
+        hold();
+        deadline = setTimeout(cleanup, 8000);
+        resolve(result);
       } catch (error) {
-        finish(error);
+        fail(error);
       }
     };
-    const timer = setTimeout(
-      () =>
-        finish(
-          new Error(
-            'No encontramos una tarjeta. Retírala, inicia otra lectura y vuelve a acercarla.',
-          ),
-        ),
+    const timeout = setTimeout(
+      () => fail(new Error('No encontramos una tarjeta. Retírala e inicia otra lectura.')),
       30000,
     );
-    if (signal.aborted) {
-      abort();
-      return;
-    }
+    activeStop = abort;
     signal.addEventListener('abort', abort, { once: true });
+    document.addEventListener('visibilitychange', visibility);
+    window.addEventListener('pagehide', abort);
     reader.addEventListener('reading', reading);
     reader.addEventListener('readingerror', failed);
     try {
-      void reader.scan({ signal: scanController.signal }).catch((error) => finish(error));
+      void reader.scan({ signal: scanController.signal }).catch(fail);
     } catch (error) {
-      finish(error);
+      fail(error);
     }
   });
 }
