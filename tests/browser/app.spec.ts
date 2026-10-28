@@ -73,12 +73,15 @@ test('búsqueda traza una orientación desde un origen elegido y abre el perfil'
   await expect(page.locator('.campus-overview')).toBeVisible();
   await page.getByRole('textbox', { name: 'Buscar stands y empresas' }).fill('altura');
   await page.getByRole('button', { name: /Altura Labs/ }).click();
+  await page.getByRole('button', { name: 'Cómo llegar', exact: true }).click();
   await page
     .getByRole('combobox', { name: 'Punto de inicio del recorrido' })
     .selectOption('red-lower');
+  await page.getByRole('button', { name: 'Trazar recorrido' }).click();
   await expect(page.locator('[data-route=campus]')).toBeVisible();
-  await page.getByRole('button', { name: 'Ver stand en Pabellón Bolivia' }).click();
+  await page.getByRole('button', { name: 'Ver interior' }).click();
   await expect(page.locator('[data-route=indoor]')).toBeVisible();
+  await page.locator('[data-lot="117"]').click();
   await page.getByRole('link', { name: 'Ver perfil', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Altura Labs' })).toBeVisible();
   await page.getByRole('button', { name: 'Guardar', exact: true }).click();

@@ -28,11 +28,29 @@ const stands = [
     categories: [{ id: 'ca2', slug: 'tecnologia', label: 'Tecnología' }],
     tags: ['Robótica'],
     featured: false,
+    promotionHighlight: 'Asesoría inicial sin costo',
     visitPoints: 80,
     location: null,
   },
 ];
-async function setup(page: Page, guest = false, failCatalog = false) {
+async function setup(page: Page, guest = false, failCatalog = false, freshInterests = false) {
+  if (!freshInterests)
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        'fexpo-interests-v1',
+        JSON.stringify({
+          version: 1,
+          state: {
+            byVisitor: {
+              'live:e0000000-0000-4000-8000-000000000001:test-user': {
+                categories: [],
+                completed: true,
+              },
+            },
+          },
+        }),
+      );
+    });
   let signedIn = !guest;
   let displayName = 'Ana Visitante';
   let visited = false;
@@ -643,10 +661,11 @@ test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha rea
     'aria-pressed',
     'true',
   );
-  await expect(page.getByRole('button', { name: '3D', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: '2D', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
+  await page.getByRole('button', { name: '3D', exact: true }).click();
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', plan.id);
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '51');
   await expect(page.getByRole('button', { name: 'Girar mapa' })).toBeVisible();
@@ -657,10 +676,10 @@ test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha rea
   await expect(page.locator('.indoor-svg [data-lot]')).toHaveCount(51);
   await page.getByRole('button', { name: '3D', exact: true }).click();
   await page.goto(`/map?stand=${standId}&view=3d`);
-  await expect(page.getByRole('heading', { name: 'Café Altiplano' })).toBeVisible();
-  await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
-  await emitNfc(page);
-  await expect(page.locator('.map-message')).toContainText('no acredita puntos');
+  await expect(page.locator('.indoor-selection')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Ubicarme con NFC' })).toHaveCount(0);
+  await page.getByRole('button', { name: /Ver Café Altiplano, stand A-01/ }).click();
+  await expect(page.locator('.stand-bottom-sheet')).toBeVisible();
   expect(checkins).toHaveLength(0);
   await page.getByRole('link', { name: 'Ver perfil', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/stands/${standId}$`));
@@ -734,3 +753,77 @@ for (const width of [320, 390, 1440])
       }
       expect(errors).toEqual([]);
     });
+
+test('primer acceso pregunta intereses, los recuerda y separa otra cuenta', async ({ page }) => {
+  await setup(page, false, false, true);
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('fexpo-interests-v1'))
+      localStorage.setItem(
+        'fexpo-interests-v1',
+        JSON.stringify({
+          version: 1,
+          state: {
+            byVisitor: {
+              'live:e0000000-0000-4000-8000-000000000001:otra-cuenta': {
+                categories: ['health'],
+                completed: true,
+              },
+            },
+          },
+        }),
+      );
+  });
+  await page.goto('/');
+  await expect(page.getByRole('dialog', { name: '¿Qué te interesa descubrir?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tecnología', exact: true }).click();
+  await page.getByRole('button', { name: 'Guardar intereses', exact: true }).click();
+  await expect(page.locator('.offer-rail')).toContainText('Asesoría inicial sin costo');
+  await expect(page.locator('.offer-rail')).not.toContainText('Consulta nuestros packs');
+  await page.reload();
+  await expect(page.getByRole('dialog', { name: '¿Qué te interesa descubrir?' })).toHaveCount(0);
+  await expect(page.locator('.offer-rail')).toContainText('Asesoría inicial sin costo');
+  const preferences = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('fexpo-interests-v1')!).state.byVisitor,
+  );
+  expect(preferences['live:e0000000-0000-4000-8000-000000000001:otra-cuenta'].categories).toEqual([
+    'health',
+  ]);
+  expect(preferences['live:e0000000-0000-4000-8000-000000000001:test-user'].categories).toEqual([
+    'technology',
+  ]);
+});
+test('las ofertas se recorren con botones y gesto, y abren el stand', async ({ page }) => {
+  await setup(page);
+  await page.goto('/');
+  await page.locator('.offers-heading .shelf-heading').click();
+  await expect(page.getByRole('dialog', { name: 'Descubre las ofertas' })).toBeVisible();
+  await expect(page.locator('.offer-browser-controls')).toContainText('1 de 2');
+  await page.getByRole('button', { name: 'Siguiente oferta' }).click();
+  await expect(page.locator('.offer-browser-controls')).toContainText('2 de 2');
+  const box = (await page.locator('.offer-swipe-stage').boundingBox())!;
+  await page.mouse.move(box.x + 35, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width - 35, box.y + box.height / 2, { steps: 10 });
+  await page.mouse.up();
+  await expect(page.locator('.offer-browser-controls')).toContainText('1 de 2');
+  await page.locator('.offer-swipe-stage .offer-card').click();
+  await expect(page).toHaveURL(new RegExp('/stands/' + standId + '$'));
+  await expect(page.getByRole('heading', { name: 'Café Altiplano' })).toBeVisible();
+});
+test('misiones ofrece insignias horizontales y el tema comunica color oscuro', async ({ page }) => {
+  await setup(page);
+  await page.goto('/missions');
+  await expect(page.getByRole('region', { name: 'Insignias de recorrido' })).toBeVisible();
+  await page.getByRole('button', { name: /Primer encuentro/ }).click();
+  await expect(page.getByRole('dialog', { name: 'Primer encuentro' })).toBeVisible();
+  await expect(page.getByRole('progressbar', { name: 'Primer encuentro' })).toHaveAttribute(
+    'aria-valuenow',
+    '0',
+  );
+  await page.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await page.goto('/profile');
+  await page.getByRole('button', { name: 'Oscuro', exact: true }).click();
+  await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
+  await expect(page.locator('meta[name="color-scheme"]')).toHaveAttribute('content', 'dark');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#101b27');
+});

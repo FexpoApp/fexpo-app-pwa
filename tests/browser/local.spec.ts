@@ -125,7 +125,7 @@ test('lector real sin Google: acepta cualquier etiqueta NDEF, sonido 7, vibraci�
     )
     .toBe(true);
   expect(await page.evaluate(() => (window as any).__vibrations)).toEqual([80]);
-  expect(await page.evaluate(() => (window as any).__signal.aborted)).toBe(true);
+  await expect.poll(() => page.evaluate(() => (window as any).__signal.aborted)).toBe(true);
   expect(api).toEqual([]);
 });
 test('UID no expuesto conserva la evidencia de lectura NDEF', async ({ page }) => {
@@ -145,7 +145,7 @@ test('cancelar y tarjeta incompatible nunca muestran éxito', async ({ page }) =
   await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
   await page.evaluate(() => (window as any).__reader.dispatchEvent(new Event('readingerror')));
-  await expect(page.getByRole('alert')).toContainText('necesita etiquetas NDEF');
+  await expect(page.getByRole('alert')).toContainText('formato NDEF');
   await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toHaveCount(0);
 });
 test('permiso NFC rechazado permite reintentar', async ({ page }) => {
@@ -183,7 +183,7 @@ test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page 
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
   await expect(page.locator('.bottom-nav')).toBeVisible();
-  await page.goto('/map');
+  await page.goto('/map?plan=red-lower&view=2d');
   await page.getByRole('button', { name: '2D', exact: true }).click();
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
   await expect(page.locator('.indoor-svg path').first()).toHaveAttribute(
@@ -198,7 +198,8 @@ test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page 
     .getByRole('button', { name: /Altura Labs/ })
     .click();
   await expect(page.getByRole('heading', { name: 'Pabellón Bolivia' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Altura Labs' })).toBeVisible();
+  await expect(page.locator('.route-summary')).toHaveCount(0);
+  await page.locator('[data-lot="117"]').click();
   await page.getByRole('link', { name: 'Ver perfil', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Altura Labs' })).toBeVisible();
 });
@@ -218,31 +219,28 @@ test('las siete plantas mantienen contorno y cantidad de lotes en 2D y 3D', asyn
     await expect(page.locator('.indoor-svg path').first()).toHaveAttribute('d', plan.outline);
   }
 });
-test('NFC del mapa conserva puntos y lleva al lote original', async ({ page }) => {
+test('Mapa no abre otro lector: NFC permanece en Check-in sin acreditar puntos locales', async ({
+  page,
+}) => {
   const api = await setup(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
-  await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map');
-  await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
-  await emit(page);
-  await expect(page.locator('.map-message')).toContainText('único stand');
-  await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
+  await expect(page.locator('.indoor-viewer')).toHaveAttribute('data-mode', '2d');
+  await expect(page.getByRole('button', { name: 'Ubicarme con NFC' })).toHaveCount(0);
+  await page.goto('/scan');
+  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
   await emit(page, '04:a1:b2:c3', ['FIPAZ:2026:STAND:stand-altura-labs']);
-  await expect(page.getByRole('heading', { name: 'Pabellón Bolivia' })).toBeVisible();
-  await expect(page.locator('.indoor-viewer')).toHaveAttribute('data-position-source', 'nfc');
-  await expect(page.locator('.map-message')).toContainText('no acredita puntos');
+  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toBeVisible();
+  await page.goto('/map');
   await expect(page.locator('.app-header .points-pill')).toHaveText('0');
-  await page.getByRole('button', { name: 'Ubicarme con NFC' }).click();
-  await page.getByRole('button', { name: 'Cancelar lectura NFC' }).click();
-  await expect(page.locator('.map-message')).toContainText('Lectura cancelada');
   expect(api).toEqual([]);
 });
 test('cámara interior, mismo pabellón en 2D y 3D y ayuda GPS', async ({ page }) => {
   await setup(page);
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
-  await page.goto('/map');
+  await page.goto('/map?plan=red-lower&view=3d');
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', 'red-lower');
   const marker = page.getByRole('button', { name: /Ver Kawsay Salud/ });
   await expect.poll(() => marker.evaluate((el) => el.style.left)).toMatch(/px$/);
@@ -258,8 +256,8 @@ test('cámara interior, mismo pabellón en 2D y 3D y ayuda GPS', async ({ page }
   await page.getByRole('button', { name: 'Alejar mapa' }).click();
   await page.getByRole('button', { name: '2D', exact: true }).click();
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
-  await page.getByRole('button', { name: 'Acerca del mapa y GPS' }).click();
-  await expect(page.getByRole('dialog')).toContainText('recorrido relativo');
+  await page.getByRole('button', { name: 'Acerca del mapa' }).click();
+  await expect(page.getByRole('dialog')).toContainText('GPS exacta');
   await page.keyboard.press('Escape');
 });
 test('sin WebGL se activa el plano original 2D', async ({ page }) => {
@@ -277,7 +275,7 @@ test('sin WebGL se activa el plano original 2D', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
   await expect(page.locator('.bottom-nav')).toBeVisible();
-  await page.goto('/map');
+  await page.goto('/map?plan=red-lower&view=3d');
   await expect(page.getByRole('status')).toContainText('Vista 2D activada');
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
   await page.getByRole('button', { name: /Ver Kawsay Salud/ }).click();
@@ -305,7 +303,7 @@ async function gpsSetup(page: Page) {
   await page.goto('/');
   await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
   await expect(page.locator('.bottom-nav')).toBeVisible();
-  await page.goto('/map');
+  await page.goto('/map?plan=red-lower&view=2d');
 }
 async function gpsEmit(page: Page, latitude = -16.5, accuracy = 4) {
   await page.evaluate(
@@ -321,8 +319,9 @@ test('GPS real API: mueve avatar, filtra ruido, pausa señal débil y cancela el
 }) => {
   await gpsSetup(page);
   await page.getByRole('button', { name: 'Mi ubicación', exact: true }).click();
+  await page.getByRole('button', { name: 'Iniciar GPS relativo', exact: true }).click();
   await gpsEmit(page);
-  await expect(page.locator('.indoor-statusbar')).toContainText('GPS relativo');
+  await expect(page.locator('.map-gps-indicator')).toContainText('GPS relativo');
   const viewer = page.locator('.indoor-viewer'),
     initial = await viewer.getAttribute('data-avatar-y');
   await gpsEmit(page, -16.49995);
@@ -343,14 +342,20 @@ test('GPS real API: mueve avatar, filtra ruido, pausa señal débil y cancela el
 test('GPS: permiso rechazado, cambio de planta y salida cancelan el watch', async ({ page }) => {
   await gpsSetup(page);
   await page.getByRole('button', { name: 'Mi ubicación', exact: true }).click();
+  await page.getByRole('button', { name: 'Iniciar GPS relativo', exact: true }).click();
   await page.evaluate(() => (window as any).__gpsError({ code: 1 }));
   await expect(page.getByRole('alert')).toContainText('Permite la ubicación');
   await page.getByRole('button', { name: 'Mi ubicación', exact: true }).click();
+  await page.getByRole('button', { name: 'Iniciar GPS relativo', exact: true }).click();
   await gpsEmit(page);
   await page.getByRole('button', { name: 'Alta', exact: true }).click();
-  await expect(page.locator('.indoor-viewer')).toHaveAttribute('data-position-source', 'origin');
+  await expect(page.locator('.indoor-viewer')).toHaveAttribute(
+    'data-position-source',
+    'unconfirmed',
+  );
   expect(await page.evaluate(() => (window as any).__gpsCleared.length)).toBe(2);
   await page.getByRole('button', { name: 'Mi ubicación', exact: true }).click();
+  await page.getByRole('button', { name: 'Iniciar GPS relativo', exact: true }).click();
   await gpsEmit(page);
   await page.getByRole('link', { name: 'Inicio', exact: true }).last().click();
   await expect(page).toHaveURL('/');
