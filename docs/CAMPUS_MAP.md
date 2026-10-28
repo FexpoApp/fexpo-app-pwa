@@ -1,5 +1,8 @@
 # Mapa interior y GPS relativo
 
+> Registro de la primera iteración. La interfaz vigente (2D por defecto, ficha inferior, NFC en Check-in y GPS relativo bajo solicitud) se describe en [Descubrimiento y mapa](MEJORAS-DESCUBRIMIENTO-2026-10-28.md).
+
+
 ## Representación
 
 En modos local/demo, Mapa muestra cada planta de los planos originales. 2D utiliza directamente PLAN_GEOMETRY y PLAN_LOTS en SVG; 3D extruye esos mismos contornos y utiliza las mismas coordenadas, tamaños y códigos de los lotes. También conserva baños, accesos, rampas y ascensores del plano. No incluye árboles, jardines ni pabellones exteriores inventados. El modo live conserva su mapa conectado existente.

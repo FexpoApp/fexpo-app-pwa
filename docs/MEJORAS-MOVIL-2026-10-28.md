@@ -1,5 +1,8 @@
 # Mejoras móviles por fases — 28/10/2026
 
+> Registro de la primera iteración. La interfaz vigente (2D por defecto, ficha inferior, NFC en Check-in y GPS relativo bajo solicitud) se describe en [Descubrimiento y mapa](MEJORAS-DESCUBRIMIENTO-2026-10-28.md).
+
+
 Trabajo local solicitado por Omar, sin git add, commit ni despliegue. Identidad: IDENTIDAD-FEXPO; fotografías del recinto: FERIAS/FIPAZ. Se conservan Google, las misiones, los sonidos de avisos/lectura y la geometría interior publicada.
 
 ## Fases implementadas

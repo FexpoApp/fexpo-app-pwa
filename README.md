@@ -4,16 +4,18 @@ Aplicación de visitantes en React, Vite y TypeScript. Identidad oficial: símbo
 
 Dominio de producción: [app.fexpo.lat](https://app.fexpo.lat), conectado a la API mediante el puente del mismo origen. **Los cambios móviles del 28/10/2026 están implementados localmente y no se han desplegado.**
 
-Detalle de las fases, contratos y límites: [Mejoras móviles 2026](docs/MEJORAS-MOVIL-2026-10-28.md).
+Detalle actual: [Descubrimiento y mapa, segunda iteración](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md). Registro anterior: [Mejoras móviles 2026](docs/MEJORAS-MOVIL-2026-10-28.md).
 
 ## Experiencia móvil actual
 
-- **Inicio:** banner FIPAZ compacto; accesos Mapa, Stands y Check-in; destacados con desplazamiento horizontal. Las tarjetas de nivel y los accesos de misiones, premios y Mi QR se retiraron únicamente del inicio.
+- **Inicio:** banner con FIPAZ 2026 dentro de la imagen; accesos Mapa, Stands y Check-in; destacados y ofertas con desplazamiento horizontal. Las tarjetas de nivel y los accesos de misiones, premios y Mi QR se retiraron únicamente del inicio.
 - **Stands:** filas horizontales por categoría y flecha hacia la categoría completa. Búsqueda por nombre, rubro, descripción y código; acepta códigos con o sin guion y varios términos.
 - **Perfil de empresa:** nombre a la izquierda, imagen a la derecha, guardar, compartir y ubicación. Las redes se muestran cuando existen datos publicados. La API pública actual no entrega logos ni redes; se utiliza una ilustración de categoría como respaldo.
 - **Conexión comercial:** formulario con consentimiento explícito, nombre, correo, celular internacional opcional y nota. La confirmación se muestra después de recibir el identificador del servidor.
 - **Servicios comerciales:** orden Ofertas → Dinámicas → Catálogo. Permanecen bloqueados con muestras identificadas; los ejemplos no entregan descuentos, premios ni puntos.
 - **Perfil del visitante:** presentación compacta, avatar Google cuando está disponible, preferencias, QR y recorrido.
+- **Intereses y ofertas:** selección opcional al primer acceso autenticado, guardada por cuenta/evento en este dispositivo. Ofertas filtradas y explorador deslizable con acceso al stand; en live solo se utilizan promociones publicadas.
+- **Misiones:** insignias horizontales de recorrido, calculadas con visitas únicas confirmadas; no suman premios ni puntos adicionales.
 - **Audio:** sonidos de aviso y lectura NFC, con vibración opcional. La guía de voz fue retirada.
 
 Las portadas por rubro son ilustrativas; no representan productos ni logotipos oficiales de las empresas. Imagen maestra y prompt: [Pósteres de categorías](docs/POSTERS-CATEGORIAS-2026-10-28.md).
@@ -80,15 +82,15 @@ El evento `e0000000-0000-4000-8000-000000000001` también se utiliza en las fixt
 
 ## Mapa y recorridos
 
-Mapa abre con una vista general 2D/3D del campo ferial, basada en la fotografía de FIPAZ 2026: bloques rojo, amarillo y verde, torres y plazas Akapana/Kalasasaya. Los bloques se eligen mediante botones horizontales por color; sus planos interiores mantienen los controles de planta y las vistas 2D/3D.
+Mapa abre en **2D por defecto**, con 3D opcional, mostrando una vista general del campo ferial, basada en la fotografía de FIPAZ 2026: bloques rojo, amarillo y verde, torres y plazas Akapana/Kalasasaya. Los bloques se eligen mediante botones horizontales por color; sus planos interiores mantienen los controles de planta y las vistas 2D/3D.
 
-Al buscar y seleccionar un stand se puede elegir un ingreso como inicio o usar la última lectura NFC conocida. El recorrido exterior es esquemático; el interior sigue pasillos evitando los puestos, baños y mesas representados. Durante el recorrido, el acceso al perfil queda en el resumen para no tapar el trazado.
+Desde Ubicación en el perfil se abre el piso en 2D y se centra el lote, sin paneles de origen ni fichas automáticas. Tocar un espacio abre una ficha inferior sobre la navegación de fexpo. **Cómo llegar** solicita el origen en un diálogo y dibuja una ruta orientativa desde un ingreso o la última visita NFC confirmada. El exterior es esquemático y el interior sigue los pasillos representados. El lector NFC está únicamente en Check-in. **Mi ubicación** conserva el GPS relativo con confirmación explícita del punto inicial.
 
 **Límites:** la foto no aporta coordenadas topográficas. Las rutas son orientativas y el GPS existente es relativo, con escala y orientación provisionales; no es navegación interior exacta ni una ruta de evacuación o accesibilidad. El avatar no se presenta inicialmente como una ubicación real.
 
 La geometría publicada por el servidor tiene prioridad. El trazado por pasillos utiliza los planos canónicos compatibles; los pisos nuevos se conservan en el visor genérico y necesitan su propia red de recorridos. No se sustituyen datos reales por stands de demostración.
 
-Referencia de los planos originales: [Mapa del recinto](docs/CAMPUS_MAP.md). Cambios actuales: [fase de mapa y límites](docs/MEJORAS-MOVIL-2026-10-28.md).
+Referencia de los planos originales: [Mapa del recinto](docs/CAMPUS_MAP.md). Cambios actuales: [mapa, intereses y límites](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md).
 
 ## Conexiones comerciales
 
@@ -127,6 +129,8 @@ Para producción se recomienda un único registro de **texto UTF-8**:
 
 Reemplazar los valores por los UUID reales y registrar previamente el UID físico de la etiqueta en el backend, asociado a ese stand. El texto identifica el destino; no acredita por sí mismo una visita. El servidor valida el UID. No guardar datos personales, tokens o secretos en la tarjeta; UID y texto estáticos no son protección criptográfica contra clonación.
 
+Una visita NFC confirmada en Check-in también actualiza el último punto conocido para el mapa; Mapa no abre otro lector.
+
 Se mantienen los formatos anteriores compatibles: enlaces de feria/stand, `/stands/UUID_STAND`, JSON con `standId` y contexto `/scan?stand=UUID_STAND`. Abrir un enlace nunca acredita puntos. La PWA no escribe ni modifica etiquetas.
 
 Solo hay una sesión de lectura activa y un resultado por sesión. Después del primer evento, el lector se mantiene brevemente mientras se retira la tarjeta; los eventos repetidos no generan otro check-in. Se libera al ocultar la página o salir de la pantalla. **Esto reduce la devolución inmediata del lector a Android, pero no permite garantizar la supresión de todos los avisos del sistema.**
@@ -159,6 +163,8 @@ Mantener USB conectado. Fuera de este acceso localhost, usar HTTPS: una IP LAN c
 
 Las misiones/canjes conectados siguen sujetos a los endpoints disponibles del backend. Las simulaciones de progreso, juegos y canjes permanecen identificadas como demostración.
 
+El tema sincroniza color-scheme, fondo raíz y theme-color. La barra nativa de Android depende del navegador y del sistema; la app no puede cubrir sus botones. Se requiere comprobación física del color final.
+
 Las rutas de URL se conservan. Mantener solo la raíz requeriría cambiar la navegación y resolver recarga, Atrás y enlaces compartidos. La PWA ya declara `display: standalone` para abrir instalada sin la barra habitual del navegador.
 
 ## Verificación
@@ -179,13 +185,13 @@ Para usar un Chromium existente, configurar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 
 Última verificación del 28/10/2026:
 
-- **46 pruebas unitarias aprobadas** en 11 archivos.
-- **22 pruebas de navegador aprobadas**, incluidos Google simulado, NFC online/offline, contactos, fallos y ausencia de desbordamiento a 320/390/1440 px en claro/oscuro.
-- Dos regresiones finales de NFC repetido y mapa publicado aprobadas: tres eventos NFC consecutivos generan una sola solicitud.
+- **52 pruebas unitarias aprobadas** en 12 archivos.
+- **25 pruebas live de navegador aprobadas**, incluidos Google simulado, NFC online/offline, contactos, fallos y ausencia de desbordamiento a 320/390/1440 px en claro/oscuro.
+- **15 pruebas demo aprobadas** y **18 casos locales comprobados**, incluidos GPS relativo, NFC y fallback a 2D sin WebGL. Tres eventos NFC consecutivos generan una sola solicitud de check-in.
 - Tipos y compilación live aprobados. Revisión visual móvil/escritorio y recorridos exterior/interior completados.
 - Sin escrituras de negocio en producción; sin add, commit ni despliegue durante esta actualización.
 
-Capturas: [Inicio](docs/qa/2026-10-28/light-home.png) · [Recinto 3D](docs/qa/2026-10-28/dark-map-3d.png). Registro completo: [Mejoras móviles](docs/MEJORAS-MOVIL-2026-10-28.md).
+Capturas actuales: [Ficha inferior](docs/qa/2026-10-28-v2/light-map-sheet.png) · [Ofertas](docs/qa/2026-10-28-v2/light-offer-explorer.png) · [Recinto 3D](docs/qa/2026-10-28-v2/dark-map-general-3d.png). Registro completo: [Segunda iteración](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md).
 
 ## Despliegue
 
