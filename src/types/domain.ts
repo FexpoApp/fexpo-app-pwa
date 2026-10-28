@@ -45,6 +45,10 @@ export interface Stand {
   promotion?: string;
   points: number;
   featured?: boolean;
+  coverUrl?: string;
+  logoUrl?: string;
+  website?: string;
+  socialLinks?: { facebook?: string; instagram?: string; linkedin?: string; whatsapp?: string };
 }
 
 export interface Mission {
