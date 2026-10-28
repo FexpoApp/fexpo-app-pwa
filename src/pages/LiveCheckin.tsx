@@ -76,9 +76,10 @@ export function LiveCheckin() {
     controller.current = abort;
     setError('');
     setPhase('reading');
+    let read = false;
     try {
       const reading = await readNfc(abort.signal, target);
-      abort.abort();
+      read = true;
       if (!mounted.current || useLive.getState().user?.id !== currentUser) return;
       audioFeedback.request('nfcRead');
       setPhase('sending');
@@ -104,7 +105,7 @@ export function LiveCheckin() {
             : message(e),
         );
     } finally {
-      abort.abort();
+      if (!read) abort.abort();
       controller.current = null;
     }
   }
@@ -177,7 +178,7 @@ export function LiveCheckin() {
             <Scan size={46} />
           </div>
           <h3 className="text-center">Acerca la tarjeta al celular</h3>
-          <p>Mantén la pantalla abierta y desbloqueada.</p>
+          <p>Mantén la pantalla abierta y desbloqueada. Cuando confirme la lectura, retira la tarjeta.</p>
           <button className="button secondary" onClick={cancel}>
             Cancelar lectura
           </button>
@@ -195,6 +196,7 @@ export function LiveCheckin() {
           onClose={closeReceipt}
         >
           <div className="visit-ticket">
+            <small>Retira la tarjeta del celular.</small>
             <div className="row">
               <strong>Fexpo</strong>
               <CheckCircle2 size={28} />

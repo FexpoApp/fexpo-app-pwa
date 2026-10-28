@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { audioFeedback, type AudioCue } from './feedback';
@@ -7,16 +6,14 @@ import { useExperience } from '@/state/experience';
 
 export const useFeedback = create<{
   sounds: boolean;
-  voice: boolean;
   vibration: boolean;
   receiptOpen: boolean;
-  toggle: (key: 'sounds' | 'voice' | 'vibration') => void;
+  toggle: (key: 'sounds' | 'vibration') => void;
   holdNotices: (value: boolean) => void;
 }>()(
   persist(
     (update) => ({
       sounds: true,
-      voice: true,
       vibration: true,
       receiptOpen: false,
       toggle: (key) => update((s) => ({ [key]: !s[key] })),
@@ -24,19 +21,21 @@ export const useFeedback = create<{
     }),
     {
       name: 'fexpo-feedback-v1',
-      partialize: (s) => ({ sounds: s.sounds, voice: s.voice, vibration: s.vibration }),
+      version: 2,
+      migrate: (persisted) => {
+        const old = (persisted ?? {}) as { sounds?: boolean; vibration?: boolean };
+        return { sounds: old.sounds !== false, vibration: old.vibration !== false };
+      },
+      partialize: (s) => ({ sounds: s.sounds, vibration: s.vibration }),
     },
   ),
 );
-const sources: Record<AudioCue, string> = {
-  welcome: 'matilda-welcome.mp3',
-  nfcGuide: 'matilda-nfc.mp3',
+const sources: Partial<Record<AudioCue, string>> = {
   notification: 'sonido-05.mp3',
   nfcRead: 'sonido-07.mp3',
 };
 export function AudioHost() {
   const prefs = useFeedback();
-  const { pathname } = useLocation();
   const { notices } = useExperience();
   const [unlocked, setUnlocked] = useState(() => navigator.userActivation?.hasBeenActive || false);
   const seen = useRef<Set<string> | null>(null);
@@ -56,8 +55,7 @@ export function AudioHost() {
         (cue, signal) =>
           new Promise<void>((resolve) => {
             const settings = useFeedback.getState();
-            const voice = cue === 'welcome' || cue === 'nfcGuide';
-            if (signal.aborted || (voice ? !settings.voice : !settings.sounds)) {
+            if (signal.aborted || !settings.sounds || !sources[cue]) {
               resolve();
               return;
             }
@@ -81,7 +79,7 @@ export function AudioHost() {
             audio.onended = finish;
             audio.onerror = finish;
             audio.onplaying = () => {
-              if (!voice && settings.vibration) {
+              if (settings.vibration) {
                 try {
                   navigator.vibrate?.(80);
                 } catch {
@@ -104,14 +102,6 @@ export function AudioHost() {
     return () => document.removeEventListener('visibilitychange', visibility);
   }, [unlocked]);
   useEffect(() => {
-    if (!unlocked || !prefs.voice) return;
-    const cue =
-      pathname === '/' ? 'welcome' : ['/scan', '/nfc-test'].includes(pathname) ? 'nfcGuide' : null;
-    if (!cue) return;
-    audioFeedback.speakOnce(cue);
-    return () => audioFeedback.stopVoice(cue);
-  }, [pathname, unlocked, prefs.voice]);
-  useEffect(() => {
     if (seen.current && notices.some((n) => !seen.current!.has(n.id) && !n.read))
       pendingNotice.current = true;
     seen.current = new Set(notices.map((n) => n.id));
@@ -120,12 +110,6 @@ export function AudioHost() {
       audioFeedback.request('notification');
     }
   }, [notices, unlocked, prefs.receiptOpen]);
-  useEffect(() => {
-    if (!prefs.voice) {
-      audioFeedback.stopVoice('welcome');
-      audioFeedback.stopVoice('nfcGuide');
-    }
-  }, [prefs.voice]);
   return null;
 }
 export function FeedbackPreferences() {
@@ -135,7 +119,6 @@ export function FeedbackPreferences() {
       {(
         [
           { key: 'sounds', title: 'Sonidos', detail: 'Avisos y lectura NFC' },
-          { key: 'voice', title: 'Guía de voz', detail: 'Bienvenida y ayuda NFC · voz femenina' },
           {
             key: 'vibration',
             title: 'Vibración',
