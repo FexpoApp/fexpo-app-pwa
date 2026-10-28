@@ -28,6 +28,7 @@ import { AudioHost } from '@/features/audio/AudioHost';
 import { ConnectionStatus } from './Connection';
 import { Brand } from './Brand';
 import { stopNfcReading } from '@/services/nfc';
+import { InterestOnboarding } from './InterestOnboarding';
 
 const tabs = [
   { path: '/', label: 'Inicio', icon: Home },
@@ -315,6 +316,7 @@ export function Shell() {
         )}
       </div>
       <AudioHost />
+      <InterestOnboarding />
     </div>
   );
 }

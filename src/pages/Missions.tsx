@@ -7,6 +7,7 @@ import { MISSIONS } from '@/data/missions';
 import { REWARDS } from '@/data/rewards';
 import { useDemo, missionValue, missionArt, pointsFor } from '@/state/demo';
 import { Art, Progress, SectionTitle, Points, Modal, Pill } from '@/ui/components';
+import { BadgeShelf } from '@/ui/BadgeShelf';
 
 export function RewardCards({ grid = false }: { grid?: boolean }) {
   const [selected, setSelected] = useState<string | null>(null);
@@ -78,6 +79,7 @@ function DemoMissionsPage() {
         </div>
         <Progress value={done} total={MISSIONS.length} label="Misiones completadas" />
       </div>
+      <BadgeShelf />
       <div className="mission-list">
         {MISSIONS.map((mission) => {
           const value = missionValue(mission, visits);

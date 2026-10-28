@@ -4,6 +4,7 @@ import { useStands } from '@/state/experience';
 import { LIVE } from '@/services/config';
 import { Art } from '@/ui/components';
 import { StandShelf } from '@/ui/StandShelf';
+import { OffersSection } from '@/ui/OffersSection';
 
 const actions = [
   { path: '/map', name: 'Mapa', art: 'map', tint: 'blue' },
@@ -18,6 +19,9 @@ export function HomePage() {
     <div className="stack home-page compact-home">
       <Link className="fair-compact" to="/events/event-fipaz-2026" aria-label="Conocer FIPAZ 2026">
         <img src="/assets/events/fipaz-banner.jpg" alt="FIPAZ 2026" fetchPriority="high" />
+        <span className="fair-image-title" aria-hidden="true">
+          FIPAZ <small>2026</small>
+        </span>
         <span className="fair-compact-caption">
           <strong>FIPAZ 2026</strong>
           <span>
@@ -45,6 +49,7 @@ export function HomePage() {
         stands={featured.length ? featured : stands}
         to={featured.length ? '/stands?category=general&featured=1' : '/stands?category=general'}
       />
+      <OffersSection />
       {!LIVE && <p className="footnote">Vista de demostración · empresas de ejemplo.</p>}
     </div>
   );

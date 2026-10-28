@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#132D46" />
+    <meta name="color-scheme" content="light dark" />
     <meta
       name="description"
       content="Explora la feria con Fexpo. Mapa, stands, visitas y experiencias en un solo lugar."
@@ -21,6 +22,9 @@
           mode === 'dark' ||
           (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
         document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        document.documentElement.style.backgroundColor = dark ? '#101b27' : '#f5f4ef';
+        document.querySelector('meta[name="color-scheme"]').content = dark ? 'dark' : 'light';
         document.querySelector('meta[name="theme-color"]').content = dark ? '#101b27' : '#F5F4EF';
       } catch {}
     </script>

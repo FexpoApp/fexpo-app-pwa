@@ -21,6 +21,9 @@ export function useTheme() {
     function apply() {
       const theme = mode === 'dark' || (mode === 'system' && media.matches) ? 'dark' : 'light';
       document.documentElement.dataset.theme = theme;
+      document.documentElement.style.colorScheme = theme;
+      document.documentElement.style.backgroundColor = theme === 'dark' ? '#101b27' : '#f5f4ef';
+      document.querySelector('meta[name="color-scheme"]')?.setAttribute('content', theme);
       document
         .querySelector('meta[name="theme-color"]')
         ?.setAttribute('content', theme === 'dark' ? '#101b27' : '#f5f4ef');

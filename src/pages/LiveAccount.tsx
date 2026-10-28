@@ -10,6 +10,7 @@ import { Art, Empty, MenuLink, Modal, Pill, Progress, SectionTitle } from '@/ui/
 import { GoogleLogin } from '@/ui/GoogleLogin';
 import { useTheme } from '@/ui/theme';
 import { FeedbackPreferences } from '@/features/audio/AudioHost';
+import { BadgeShelf } from '@/ui/BadgeShelf';
 
 export function LiveProfile() {
   const s = useLive();
@@ -43,7 +44,19 @@ export function LiveProfile() {
   return (
     <div className="stack profile-page">
       <div className="profile-identity">
-        <span className="avatar">{s.user?.avatarUrl && <img src={s.user.avatarUrl} alt="" referrerPolicy="no-referrer" onError={e => { e.currentTarget.style.display = 'none'; }} />}<span>{s.user?.displayName?.slice(0, 2).toUpperCase() || 'V'}</span></span>
+        <span className="avatar">
+          {s.user?.avatarUrl && (
+            <img
+              src={s.user.avatarUrl}
+              alt=""
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          )}
+          <span>{s.user?.displayName?.slice(0, 2).toUpperCase() || 'V'}</span>
+        </span>
         <span className="grow">
           <strong>{s.user?.displayName || 'Visitante'}</strong>
           <small>{s.status === 'signedIn' ? 'Tu cuenta · Google' : 'Explora a tu ritmo'}</small>
@@ -390,6 +403,7 @@ export function LiveMissions({ rewards = false }: { rewards?: boolean }) {
           Acceder con Google
         </Link>
       )}
+      {!rewards && <BadgeShelf />}
       <div className="card row">
         <Art name="explorer" size={56} />
         <span className="grow">
