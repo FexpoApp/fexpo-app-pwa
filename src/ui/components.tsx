@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type CSSProperties } from 'react';
+import { useEffect, useRef, useId, type ReactNode, type CSSProperties } from 'react';
 import {
   ChevronRight,
   X,
@@ -175,13 +175,16 @@ export function Modal({
   children,
   onClose,
   wide = false,
+  className = '',
 }: {
   title: string;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
+  className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     const dialog = ref.current!;
     const previous = document.activeElement as HTMLElement | null;
@@ -196,8 +199,8 @@ export function Modal({
   return (
     <dialog
       ref={ref}
-      className={`modal ${wide ? 'wide' : ''}`}
-      aria-labelledby="modal-title"
+      className={`modal ${wide ? 'wide' : ''} ${className}`}
+      aria-labelledby={titleId}
       onClose={onClose}
       onClick={(e) => {
         if (e.target === e.currentTarget) ref.current?.close();
@@ -205,7 +208,7 @@ export function Modal({
     >
       <div className="modal-content">
         <div className="modal-header">
-          <h2 id="modal-title">{title}</h2>
+          <h2 id={titleId}>{title}</h2>
           <button
             className="icon-button"
             aria-label="Cerrar ventana"
