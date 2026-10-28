@@ -464,3 +464,208 @@
     font-size: 11px;
   }
 }
+
+/* Mobile navigation additions, using the official brand tokens. */
+.indoor-experience {
+  height: calc(100svh - 120px - env(safe-area-inset-bottom));
+  min-height: 510px;
+}
+.building-chips {
+  display: flex;
+  gap: 7px;
+  overflow-x: auto;
+  padding: 9px 0 5px;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.building-chips button {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 11px;
+  color: var(--ink);
+  background: var(--bg);
+}
+.building-chips button span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--building-color);
+}
+.building-chips button[aria-pressed='true'] {
+  border-color: var(--building-color, var(--ink));
+  background: color-mix(in srgb, var(--building-color, var(--brand-lime)) 15%, var(--surface));
+  font-weight: 700;
+}
+.indoor-floor-row:has(.indoor-floor-tabs) {
+  position: absolute;
+  right: 14px;
+  bottom: 5px;
+  margin: 0;
+}
+.indoor-plan-title {
+  min-height: 34px;
+  padding-right: 112px;
+  margin-top: 2px;
+}
+.indoor-plan-title small {
+  display: none;
+}
+.indoor-plan-title h2 {
+  line-height: 1.3;
+}
+.route-summary {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 35px 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.route-summary strong {
+  display: block;
+  font-size: 12px;
+}
+.route-summary small {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+}
+.route-summary label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+}
+.route-summary select {
+  flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  font-size: 10px;
+  padding: 6px;
+  min-height: 32px;
+}
+.route-summary .button {
+  font-size: 10px;
+  min-height: 32px;
+  padding: 6px;
+}
+.route-close {
+  position: absolute;
+  right: 1px;
+  top: 4px;
+  width: 30px;
+  height: 30px;
+}
+.campus-overview {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.campus-overview > svg {
+  position: absolute;
+  width: 100%;
+  height: calc(100% - 125px);
+  top: 5px;
+}
+.campus-overview .campus-canvas {
+  bottom: 100px;
+  height: calc(100% - 100px);
+}
+.overview-building-legend {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 65px;
+  display: flex;
+  gap: 8px;
+}
+.overview-building-legend button {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.overview-building-legend button > span {
+  width: 22px;
+  height: 4px;
+  border-radius: 3px;
+}
+.overview-building-legend small {
+  font-size: 8px;
+  color: var(--muted);
+}
+.overview-caption {
+  position: absolute;
+  bottom: 44px;
+  width: 100%;
+  text-align: center;
+  font-size: 8px;
+  color: var(--muted);
+}
+.overview-modes {
+  position: absolute;
+  left: 12px;
+  bottom: 3px;
+  padding: 2px;
+}
+.overview-modes button {
+  min-height: 29px;
+  min-width: 37px;
+  font-size: 10px;
+}
+.campus-overview svg [role='button']:focus-visible rect {
+  stroke: var(--ink);
+  stroke-width: 6px;
+}
+.indoor-viewer {
+  min-height: 300px;
+  background: var(--bg);
+}
+[data-theme='dark'] .indoor-viewer {
+  background: var(--bg);
+}
+@media (max-height: 750px) {
+  .indoor-experience {
+    height: auto;
+    min-height: calc(100svh - 120px);
+  }
+  .indoor-viewer {
+    min-height: 340px;
+  }
+}
+
+.overview-marker {
+  font-size: 10px;
+  min-height: 25px;
+  padding: 3px 7px;
+  border-width: 1px;
+}
+.route-profile-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--blue-ink);
+  font-weight: 700;
+  width: fit-content;
+  min-height: 28px;
+}
