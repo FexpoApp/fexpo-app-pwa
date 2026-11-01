@@ -3,8 +3,7 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import {
   Home,
   Map,
-  Scan,
-  Flag,
+  Compass,
   UserRound,
   QrCode,
   Bell,
@@ -29,19 +28,21 @@ import { ConnectionStatus } from './Connection';
 import { Brand } from './Brand';
 import { stopNfcReading } from '@/services/nfc';
 import { InterestOnboarding } from './InterestOnboarding';
+import { useCampusLocation } from '@/features/campus/location';
 
 const tabs = [
   { path: '/', label: 'Inicio', icon: Home },
   { path: '/map', label: 'Mapa', icon: Map },
-  { path: '/scan', label: 'Check-in', icon: Scan },
-  { path: '/missions', label: 'Misiones', icon: Flag },
+  { path: '/scan', label: 'Check-in', icon: QrCode },
+  { path: '/discover', label: 'Descubre', icon: Compass },
   { path: '/profile', label: 'Perfil', icon: UserRound },
 ];
 const titles: Record<string, string> = {
   '/map': 'Mapa',
   '/scan': 'Check-in',
   '/nfc-test': 'Prueba NFC',
-  '/missions': 'Misiones',
+  '/missions': 'Misiones y progreso',
+  '/discover': 'Descubre',
   '/profile': 'Perfil',
   '/stands': 'Stands',
   '/my-qr': 'Mi código QR',
@@ -58,6 +59,14 @@ export function Shell() {
   useEffect(() => () => stopNfcReading(), [pathname]);
   const navigate = useNavigate();
   const state = useExperience();
+  const latestVisit = [...state.visits]
+    .filter((visit) => Number.isFinite(Date.parse(visit.at)))
+    .sort((a, b) => Date.parse(b.at) - Date.parse(a.at))[0];
+  useEffect(() => {
+    if (latestVisit)
+      useCampusLocation.setState({ last: { standId: latestVisit.standId, at: latestVisit.at } });
+    else useCampusLocation.getState().clear();
+  }, [latestVisit?.standId, latestVisit?.at]);
   const toast = useUI((s) => s.toast);
   const notify = useUI((s) => s.notify);
   const { mode, setMode } = useTheme();
@@ -85,7 +94,10 @@ export function Shell() {
       void loadCatalog();
     };
     foreground();
-    const timer = setInterval(foreground, pathname === '/my-qr' ? 4000 : 15000);
+    const timer = setInterval(
+      foreground,
+      pathname === '/my-qr' || pathname === '/scan' ? 4000 : 15000,
+    );
     window.addEventListener('online', online);
     window.addEventListener('focus', foreground);
     document.addEventListener('visibilitychange', foreground);
@@ -101,7 +113,9 @@ export function Shell() {
     (pathname.startsWith('/stands/')
       ? 'Perfil del stand'
       : pathname.startsWith('/events/')
-        ? 'La feria'
+        ? pathname === '/events/event-fipaz-2026'
+          ? 'Agenda FIPAZ'
+          : 'La feria'
         : 'Fexpo');
   useEffect(() => {
     const sync = () => setOnline(navigator.onLine);
@@ -135,7 +149,8 @@ export function Shell() {
     <div className="preview-stage">
       <aside className="preview-rail">
         <Link to="/" className="preview-brand">
-          <Brand /><span className="preview-tag">PWA</span>
+          <Brand />
+          <span className="preview-tag">PWA</span>
         </Link>
         <div>
           <span className="eyebrow">TU FERIA, A TU RITMO</span>
@@ -163,7 +178,7 @@ export function Shell() {
         </nav>
         <div className="preview-bottom">
           <span className="preview-tag">
-            {LIVE ? 'Datos del evento' : LOCAL ? 'Modo local · NFC real' : 'Demostración'}
+            {LIVE ? 'Datos del evento' : LOCAL ? 'Modo local' : 'Demostración'}
           </span>
           <p>
             {LIVE
@@ -230,7 +245,7 @@ export function Shell() {
           <div className="offline-banner" role="status">
             <WifiOff size={15} />
             {LIVE
-              ? 'Sin conexión · las visitas pendientes se enviarán al volver'
+              ? 'Sin conexión · el recorrido se actualizará al volver'
               : 'Sin conexión · puedes explorar la demo'}
           </div>
         )}
