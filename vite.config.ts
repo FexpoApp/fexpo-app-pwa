@@ -63,7 +63,8 @@ export default defineConfig(({ mode }) => {
           // Public illustrations have stable names; they must receive content revisions.
           dontCacheBustURLsMatching: /^assets\/.*-[\w-]{8}\.(?:js|css)$/,
           navigateFallback: '/index.html',
-          navigateFallbackDenylist: [/^\/api\//],
+          // Links to posters/PDFs must open the asset, including in an installed PWA.
+          navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/(?:assets|fonts|icons)\//],
           cleanupOutdatedCaches: true,
         },
         devOptions: { enabled: false },
