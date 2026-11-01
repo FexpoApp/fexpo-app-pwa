@@ -9,6 +9,8 @@ import { StandsPage, StandPage } from './pages/Stands';
 import { QrPage, NotificationsPage, EventPage, NotFoundPage } from './pages/Secondary';
 import { StandTagLink } from './pages/LiveCheckin';
 import { LocalEntry } from './pages/Welcome';
+import { DiscoverPage } from './pages/Discover';
+import { NFC_ENABLED } from './services/config';
 import { NfcProbe } from './pages/NfcProbe';
 
 export function App() {
@@ -19,7 +21,11 @@ export function App() {
           <Route index element={<HomePage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="scan" element={<CheckinPage />} />
-          <Route path="nfc-test" element={<NfcProbe />} />
+          <Route
+            path="nfc-test"
+            element={NFC_ENABLED ? <NfcProbe /> : <Navigate to="/scan" replace />}
+          />
+          <Route path="discover" element={<DiscoverPage />} />
           <Route path="missions" element={<MissionsPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="stands" element={<StandsPage />} />
