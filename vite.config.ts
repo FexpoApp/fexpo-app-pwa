@@ -42,10 +42,20 @@ export default defineConfig(({ mode }) => {
           background_color: '#F5F4EF',
           theme_color: '#132D46',
           icons: [
-            { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
-            { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
             {
-              src: '/icons/maskable-512.png',
+              src: '/icons/fexpo-official-v2-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: '/icons/fexpo-official-v2-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: '/icons/fexpo-official-v2-maskable-512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',

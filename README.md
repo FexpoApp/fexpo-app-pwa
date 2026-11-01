@@ -20,6 +20,7 @@ Las casillas marcadas describen código de la PWA, no un despliegue ni una certi
 - [x] API de actividades existente, paginación y deduplicación; afiches fechados suministrados por Omar, con atribución. No se inventan horas de espectáculo a partir del horario general ni se incorpora la cartelera 2023. La API tiene prioridad por título/día y puede retirar afiches coincidentes si devuelve cancelaciones.
 - [x] Visitas por QR personal: GET /me/qr, pase visible desde Check-in y actualización del progreso cada 4 segundos mientras se muestra. Abrir un enlace de stand o mostrar un QR no acredita puntos.
 - [x] NFC en pausa (`NFC_ENABLED = false`): sin botón de lectura; `/nfc-test` redirige a Check-in. Código y pruebas unitarias conservados para una futura feria.
+- [x] Iconos de instalación con isotipo oficial negro sobre lima: PNG 192/512, máscara Android, Apple 180 y favicon. URLs versionadas `fexpo-official-v2-*` para comunicar el cambio a instalaciones existentes.
 - [x] Comparación documentada del PDF oficial, página 3, con las siete zonas y 472 espacios del modelo. No se modificó la geometría ni se afirmó georreferenciación. Servicios ofrece el plano oficial donde falta un punto interactivo validado.
 - [x] Se mantienen sesión, favoritos, contactos con consentimiento, intereses, mapa 2D/3D, ofertas y progreso confirmado por servidor.
 
@@ -265,6 +266,10 @@ Registro anterior del 28/10/2026:
 Capturas de esa revisión: [Ficha inferior](docs/qa/2026-10-28-v2/light-map-sheet.png) · [Ofertas](docs/qa/2026-10-28-v2/light-offer-explorer.png) · [Recinto 3D](docs/qa/2026-10-28-v2/dark-map-general-3d.png). Registro completo: [Segunda iteración](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md).
 
 ## Despliegue
+
+Los iconos se regeneran con `node scripts/generate-pwa-icons.mjs`, usando el mismo SVG oficial de la cabecera y un navegador Playwright disponible (en Windows, Edge; admite `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`). La variante maskable mantiene el símbolo dentro del círculo seguro central. Las URLs anteriores también sirven el arte actualizado. El manifiesto conserva su ruta e identidad y se publica con revalidación de caché.
+
+Actualizar el service worker no garantiza cambiar inmediatamente el icono del lanzador. Chrome gestiona la actualización de identidad por separado y puede solicitar aceptación al usuario; se cambiaron las URLs del campo `icons` para que detecte el nuevo recurso. Referencia: [actualizaciones de aplicaciones instaladas en Chrome](https://developer.chrome.com/blog/improvements-to-web-app-updates). La actualización en un teléfono físico debe comprobarse tras el despliegue.
 
 En Vercel: React/Vite, build `npm run build:live`, output `dist` y las variables del entorno correspondiente. `api/backend.ts` y `api/session/[action].ts` usan el puente Node del mismo origen; la reescritura SPA excluye `/api/`. Vite monta el mismo puente en desarrollo y preview.
 
