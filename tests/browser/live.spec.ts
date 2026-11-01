@@ -33,7 +33,13 @@ const stands = [
     location: null,
   },
 ];
-async function setup(page: Page, guest = false, failCatalog = false, freshInterests = false) {
+async function setup(
+  page: Page,
+  guest = false,
+  failCatalog = false,
+  freshInterests = false,
+  staffState?: { visited: boolean },
+) {
   if (!freshInterests)
     await page.addInitScript(() => {
       localStorage.setItem(
@@ -147,6 +153,7 @@ async function setup(page: Page, guest = false, failCatalog = false, freshIntere
       });
       return;
     }
+    if (staffState?.visited) visited = true;
     let data: unknown = [];
     if (path === '/auth/me') data = { id: 'test-user', profile: { displayName, avatarUrl: null } };
     else if (path === '/me/profile') {
@@ -286,95 +293,73 @@ async function setup(page: Page, guest = false, failCatalog = false, freshIntere
   });
   return checkins;
 }
-async function emitNfc(page: Page, serial = '04:a1:b2:c3') {
-  await page.evaluate(
-    ({ id, serial }) => {
-      const w = window as unknown as Record<string, any>;
-      const event = new Event('reading');
-      Object.assign(event, {
-        serialNumber: serial,
-        message: {
-          records: [
-            {
-              recordType: 'url',
-              data: new DataView(
-                new TextEncoder().encode(`https://fexpo.test/stands/${id}`).buffer,
-              ),
-            },
-          ],
-        },
-      });
-      w.__reader.dispatchEvent(event);
-    },
-    { id: standId, serial },
-  );
-}
-test('recorrido conectado: NFC, saldo del servidor, sonido 7 y aviso 5 con vibración', async ({
-  page,
-}) => {
-  const requests = await setup(page);
-  await page.goto('/');
-  await expect(page.locator('.app-header .points-pill')).toHaveText('17');
-  await page.locator('.bottom-nav').getByRole('link', { name: 'Check-in' }).click();
-  await page.getByRole('button', { name: 'Leer tarjeta NFC' }).click();
-  await emitNfc(page);
-  await emitNfc(page);
-  await emitNfc(page);
-  await expect(page.getByRole('dialog', { name: '¡Visita registrada!' })).toBeVisible();
-  await expect(page.locator('.app-header .points-pill')).toHaveText('67');
-  expect(requests).toHaveLength(1);
-  expect(requests[0]).toMatchObject({ method: 'nfc', credential: '04A1B2C3' });
-  expect(requests[0].requestKey).toMatch(/^[0-9a-f-]{36}$/);
-  await expect
-    .poll(() =>
-      page.evaluate(() => (window as any).__audio.some((s: string) => s.endsWith('sonido-07.mp3'))),
-    )
-    .toBe(true);
-  expect(
-    await page.evaluate(() =>
-      (window as any).__audio.some((s: string) => s.endsWith('sonido-05.mp3')),
-    ),
-  ).toBe(false);
-  await page.getByRole('button', { name: 'Listo', exact: true }).click();
-  await expect
-    .poll(() =>
-      page.evaluate(() => (window as any).__audio.some((s: string) => s.endsWith('sonido-05.mp3'))),
-    )
-    .toBe(true);
-  expect(await page.evaluate(() => (window as any).__vibrations)).toEqual([80, 80]);
+test('Descubre live usa el catálogo y no publica un menú o precio inventado', async ({ page }) => {
+  await setup(page, true);
+  await page.goto('/discover?section=comer');
+  await page.getByRole('button', { name: /Café Altiplano/ }).click();
+  await expect(
+    page
+      .getByRole('dialog')
+      .getByText('Este expositor todavía no publicó su menú.', { exact: false }),
+  ).toBeVisible();
+  await expect(page.locator('.menu-items')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Cerrar ventana' }).click();
+  await expect(page.getByText('Restaurantes y menús de ejemplo.')).toHaveCount(0);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Misiones y progreso', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mis premios', exact: true })).toBeVisible();
 });
-test('offline: guarda lectura sin sumar puntos y la confirma al recuperar conexión', async ({
+
+test('QR muestra el pase y actualiza solo tras confirmación del personal', async ({ page }) => {
+  const staff = { visited: false };
+  const requests = await setup(page, false, false, false, staff);
+  await page.goto('/scan');
+  await expect(page.getByRole('heading', { name: 'Muéstralo en el stand' })).toBeVisible();
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expect(page.locator('.app-header .points-pill')).toHaveText('17');
+  await expect(page.getByRole('button', { name: /NFC/ })).toHaveCount(0);
+  expect(await page.evaluate(() => !!(window as any).__reader)).toBe(false);
+  // External staff confirmation is a fixture, never a visitor-created check-in.
+  staff.visited = true;
+  await expect(page.locator('.app-header .points-pill')).toHaveText('67', { timeout: 7000 });
+  expect(requests).toHaveLength(0);
+  await page.goto('/profile');
+  await expect(
+    page.locator('main').getByRole('link').filter({ hasText: 'Café Altiplano' }),
+  ).toBeVisible();
+});
+
+test('QR guardado puede mostrarse offline sin simular confirmaciones ni NFC', async ({
   page,
   context,
 }) => {
   const requests = await setup(page);
-  await page.goto(`/scan?stand=${standId}`);
-  await expect(page.locator('.app-header .points-pill')).toHaveText('17');
+  await page.goto('/scan');
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
   await context.setOffline(true);
-  await page.getByRole('button', { name: 'Leer tarjeta NFC' }).click();
-  await emitNfc(page);
-  await expect(page.getByRole('dialog', { name: 'Visita pendiente' })).toBeVisible();
-  expect(requests).toHaveLength(0);
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
   await expect(page.locator('.app-header .points-pill')).toHaveText('17');
-  await page.getByRole('button', { name: 'Listo', exact: true }).click();
+  expect(requests).toHaveLength(0);
+  expect(await page.evaluate(() => !!(window as any).__reader)).toBe(false);
   await context.setOffline(false);
-  await expect(page.locator('.app-header .points-pill')).toHaveText('67');
-  expect(requests).toHaveLength(1);
+  await expect(page.locator('.app-header .points-pill')).toHaveText('17');
 });
-test('un enlace o una lectura sin UID no registra visitas; cancelar tampoco', async ({ page }) => {
+
+test('los enlaces identifican un stand pero no acreditan visitas y NFC redirige al QR', async ({
+  page,
+}) => {
   const requests = await setup(page);
-  await page.goto(`/e/${eventId}/s/${standId}`);
-  await expect(page.getByRole('button', { name: 'Leer tarjeta NFC' })).toBeVisible();
+  await page.goto('/e/' + eventId + '/s/' + standId);
+  await expect(page.getByRole('heading', { name: 'Muéstralo en el stand' })).toBeVisible();
+  await expect(page.getByText('En Café Altiplano', { exact: true })).toBeVisible();
   expect(requests).toHaveLength(0);
-  await page.getByRole('button', { name: 'Leer tarjeta NFC' }).click();
-  await emitNfc(page, '');
-  await expect(page.getByRole('alert')).toContainText('identificador');
-  expect(requests).toHaveLength(0);
-  await page.getByRole('button', { name: 'Leer tarjeta NFC' }).click();
-  await page.getByRole('button', { name: 'Cancelar lectura' }).click();
-  await emitNfc(page);
+  await page.goto('/nfc-test');
+  await expect(page).toHaveURL(/\/scan$/);
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  expect(await page.evaluate(() => !!(window as any).__reader)).toBe(false);
   expect(requests).toHaveLength(0);
 });
+
 test('Google, QR firmado, favoritos y cierre de sesión sin datos privados', async ({ page }) => {
   await setup(page, true);
   await page.goto('/profile');
@@ -444,7 +429,7 @@ test('sin Web NFC muestra Mi QR y nunca inventa una visita', async ({ page }) =>
     delete window.NDEFReader;
   });
   await page.goto('/scan');
-  await expect(page.getByRole('link', { name: 'Mostrar Mi QR' })).toBeVisible();
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
   await expect(page.getByRole('button', { name: 'Leer tarjeta NFC' })).toHaveCount(0);
   expect(requests).toHaveLength(0);
 });
@@ -691,9 +676,7 @@ test('invitados y enlaces inválidos no acreditan visitas ni muestran QR privado
   await page.goto('/my-qr');
   await expect(page.getByRole('link', { name: 'Acceder con Google' })).toBeVisible();
   await page.goto('/scan');
-  await expect(
-    page.getByRole('link', { name: 'Acceder con Google para registrar visitas' }),
-  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Acceder con Google', exact: true })).toBeVisible();
   await page.goto('/e/otra-feria/s/' + standId);
   await expect(page.getByText('Esta tarjeta pertenece a otra feria')).toBeVisible();
   await page.goto('/stands/id-no-valido');
@@ -826,4 +809,101 @@ test('misiones ofrece insignias horizontales y el tema comunica color oscuro', a
   await expect(page.locator('html')).toHaveCSS('color-scheme', 'dark');
   await expect(page.locator('meta[name="color-scheme"]')).toHaveAttribute('content', 'dark');
   await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#101b27');
+});
+
+test('agenda live usa actividades publicadas, hora de La Paz y no anuncia ejemplos', async ({
+  page,
+}) => {
+  await setup(page, true);
+  await page.route('**/api/backend?*', async (route) => {
+    const path = new URL(route.request().url()).searchParams.get('path') || '';
+    if (!path.startsWith(`/events/${eventId}/activities?`)) return route.fallback();
+    await route.fulfill({
+      json: {
+        success: true,
+        data: [
+          {
+            id: 'real-activity',
+            eventId,
+            standId,
+            title: 'Presentación publicada por el organizador',
+            description: 'Actividad del servidor',
+            startsAt: '2026-11-02T02:30:00Z',
+            endsAt: null,
+            status: 'scheduled',
+            locationText: 'Escenario principal',
+          },
+          {
+            id: 'tomorrow',
+            eventId,
+            standId: null,
+            title: 'Actividad del lunes',
+            description: null,
+            startsAt: '2026-11-02T17:00:00-04:00',
+            endsAt: null,
+            status: 'scheduled',
+          },
+          {
+            id: 'draft',
+            eventId,
+            title: 'Borrador que no debe mostrarse',
+            description: null,
+            startsAt: '2026-11-01T17:00:00-04:00',
+            endsAt: null,
+            status: 'draft',
+          },
+        ],
+        meta: { page: 1, limit: 100, total: 3, totalPages: 1 },
+      },
+    });
+  });
+  await page.goto('/events/event-fipaz-2026?day=2026-11-01');
+  await expect(
+    page.getByRole('heading', { name: 'Presentación publicada por el organizador' }),
+  ).toBeVisible();
+  await expect(page.locator('.agenda-time').first()).toContainText('22:30');
+  await expect(page.getByText('Escenario principal', { exact: true }).first()).toBeVisible();
+  await expect(page.getByText('Borrador que no debe mostrarse')).toHaveCount(0);
+  await expect(
+    page.getByText('Actividades de ejemplo para explorar el diseño.', { exact: false }),
+  ).toHaveCount(0);
+  await page.getByRole('button', { name: 'lunes, 2 de noviembre', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Actividad del lunes' })).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: 'Presentación publicada por el organizador' }),
+  ).toHaveCount(0);
+  await page.goto('/');
+  await expect(page.locator('.advertisement')).toHaveCount(0);
+  await expect(
+    page.getByText('Los anuncios aparecerán aquí cuando estén publicados.'),
+  ).toBeVisible();
+});
+
+test('agenda caída permite reintentar sin presentar una cartelera ficticia', async ({ page }) => {
+  await setup(page, true);
+  let requests = 0;
+  await page.route('**/api/backend?*', async (route) => {
+    const path = new URL(route.request().url()).searchParams.get('path') || '';
+    if (!path.startsWith(`/events/${eventId}/activities?`)) return route.fallback();
+    requests++;
+    await route.fulfill(
+      requests === 1
+        ? {
+            status: 503,
+            json: { success: false, error: { code: 'UNAVAILABLE', message: 'Unavailable' } },
+          }
+        : { json: { success: true, data: [], meta: null } },
+    );
+  });
+  await page.goto('/events/event-fipaz-2026?day=2026-11-07');
+  await expect(page.getByRole('alert')).toContainText('No pudimos actualizar la agenda');
+  await expect(page.getByRole('heading', { name: 'La noche también se disfruta' })).toHaveCount(0);
+  await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
+  await expect(
+    page.getByText('Aún no hay actividades publicadas para este día.', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Ver novedades oficiales' })).toHaveAttribute(
+    'href',
+    'https://www.facebook.com/feriafipaz/',
+  );
 });
