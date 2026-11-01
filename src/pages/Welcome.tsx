@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
-import { ArrowUpRight, ArrowRight, Nfc } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, QrCode } from 'lucide-react';
 import { LOCAL } from '@/services/config';
 import { useLocalAccount } from '@/state/local-account';
 import { Brand } from '@/ui/Brand';
@@ -98,9 +98,9 @@ export function Welcome() {
           <p className="welcome-privacy">
             Explora sin cuenta. Tu prueba se guarda solo en este dispositivo.
           </p>
-          <Link className="welcome-nfc" to="/nfc-test">
-            <Nfc size={20} />
-            Probar mi NFC
+          <Link className="welcome-nfc" to="/scan">
+            <QrCode size={20} />
+            Ver mi pase QR
             <ArrowUpRight size={17} />
           </Link>
         </div>

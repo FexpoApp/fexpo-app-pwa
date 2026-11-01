@@ -25,7 +25,7 @@ export function StandTagLink() {
         Abre el enlace del evento correcto para continuar.
       </Empty>
     );
-  // A link identifies the stand; it never substitutes for the NFC credential.
+  // A link identifies the stand; only staff confirmation of the visitor QR records a visit.
   return <Navigate to={`/scan?stand=${encodeURIComponent(stand || '')}`} replace />;
 }
 export function LiveCheckin() {

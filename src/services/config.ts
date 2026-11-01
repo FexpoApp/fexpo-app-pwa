@@ -1,3 +1,5 @@
+/** NFC is retained for future fairs, outside the visitor journey in this edition. */
+export const NFC_ENABLED = false;
 export const LIVE = import.meta.env.VITE_DATA_MODE === 'live';
 export const LOCAL = import.meta.env.VITE_DATA_MODE === 'local';
 export const EVENT_ID = import.meta.env.VITE_EVENT_ID?.trim() || '';

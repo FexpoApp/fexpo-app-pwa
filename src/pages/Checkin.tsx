@@ -1,4 +1,5 @@
-import { LIVE, LOCAL } from '@/services/config';
+import { QrCheckin } from './QrCheckin';
+import { LIVE, LOCAL, NFC_ENABLED } from '@/services/config';
 import { NfcProbe } from './NfcProbe';
 import { LiveCheckin } from './LiveCheckin';
 import { useEffect, useRef, useState } from 'react';
@@ -312,5 +313,15 @@ function DemoCheckinPage() {
 }
 
 export function CheckinPage() {
-  return LIVE ? <LiveCheckin /> : LOCAL ? <NfcProbe /> : <DemoCheckinPage />;
+  return NFC_ENABLED ? (
+    LIVE ? (
+      <LiveCheckin />
+    ) : LOCAL ? (
+      <NfcProbe />
+    ) : (
+      <DemoCheckinPage />
+    )
+  ) : (
+    <QrCheckin />
+  );
 }
