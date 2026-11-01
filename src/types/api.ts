@@ -225,6 +225,9 @@ export interface EventMapDto {
 
 export interface ActivityDto {
   id: string;
+  eventId?: string;
+  standId?: string | null;
+  locationText?: string | null;
   title: string;
   description: string | null;
   startsAt: string | null;
