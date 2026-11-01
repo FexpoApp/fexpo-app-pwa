@@ -8,8 +8,9 @@ import { ArrowRight, Bell, CalendarDays, MapPin, RefreshCw, Trash2 } from 'lucid
 import { EVENTS, eventStatus } from '@/data/events';
 import { useDemo } from '@/state/demo';
 import { Art, Empty, Pill } from '@/ui/components';
+import { FairAgenda } from '@/features/fair/FairAgenda';
 
-function DemoQrPage() {
+export function DemoQrPage({ checkin = false }: { checkin?: boolean }) {
   const state = useDemo();
   if (!state.signedIn)
     return (
@@ -54,10 +55,12 @@ function DemoQrPage() {
           visitas.
         </p>
       </div>
-      <Link className="button secondary" to="/scan">
-        <RefreshCw size={18} />
-        Probar el check-in
-      </Link>
+      {!checkin && (
+        <Link className="button secondary" to="/scan">
+          <RefreshCw size={18} />
+          Probar el check-in
+        </Link>
+      )}
     </div>
   );
 }
@@ -109,6 +112,7 @@ export function NotificationsPage() {
 }
 export function EventPage() {
   const { id } = useParams();
+  if (id === 'event-fipaz-2026') return <FairAgenda />;
   const event = EVENTS.find((e) => e.id === id && (!LIVE || e.id.includes('fipaz')));
   if (!event)
     return (
