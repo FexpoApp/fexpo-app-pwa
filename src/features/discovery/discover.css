@@ -1,0 +1,440 @@
+/* Compact visitor tools; reuse the existing navy / lime tokens and Poppins. */
+.compact-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.compact-home {
+  gap: 12px;
+}
+.compact-home .quick-grid {
+  gap: 8px;
+}
+.compact-home .quick-action .quick-image {
+  height: 58px;
+}
+.compact-home .quick-action .quick-image img {
+  width: 56px;
+  height: 56px;
+}
+.compact-home .shelf-heading h2,
+.compact-home .advertisement-heading h2,
+.discover-page .shelf-heading h2 {
+  font-size: 15px;
+}
+.fair-identity {
+  min-height: 44px;
+  padding: 3px 10px;
+  gap: 7px;
+}
+.fair-identity > img {
+  width: 80px;
+  height: 27px;
+}
+.fair-identity > span {
+  padding-left: 7px;
+}
+.fair-identity small {
+  font-size: 10px;
+}
+.advertisement-heading {
+  margin-bottom: 3px;
+}
+.advertisement-controls .icon-button {
+  border: 0;
+  background: transparent;
+  width: 36px;
+  min-width: 36px;
+}
+.advertisement {
+  min-height: 168px;
+}
+.advertisement-copy {
+  padding: 12px 15px;
+  gap: 4px;
+}
+.advertisement-copy > strong {
+  font-size: 18px;
+}
+.advertisement-empty {
+  min-height: 76px;
+  padding: 12px;
+}
+.discover-sections {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.discover-sections button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 60px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 600;
+}
+.discover-sections button[aria-pressed='true'] {
+  background: var(--brand-lime);
+  color: var(--brand-navy);
+  border-color: var(--brand-lime);
+}
+.discover-food,
+.discover-today,
+.discover-services {
+  min-width: 0;
+}
+.discover-location {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 8px;
+}
+.discover-location > svg {
+  flex-shrink: 0;
+}
+.discover-location > span {
+  flex: 1;
+}
+.discover-location a {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  color: var(--ink);
+}
+.discover-note {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 7px 0;
+}
+.discover-note button,
+.agenda-update button {
+  color: var(--blue-ink);
+  font-weight: 600;
+  min-height: 44px;
+}
+.restaurant-list {
+  margin-top: 5px;
+}
+.restaurant-row,
+.service-row,
+.discover-event {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  color: var(--ink);
+}
+.restaurant-row > span,
+.service-row > span,
+.discover-event > span {
+  flex: 1;
+  min-width: 0;
+}
+.restaurant-row strong,
+.service-row strong,
+.discover-event strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.restaurant-row small,
+.service-row small,
+.discover-event small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.restaurant-row > svg,
+.service-row > svg,
+.discover-event > svg {
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.restaurant-row .category-tile {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+}
+.discover-empty {
+  color: var(--muted);
+  padding: 14px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.discover-empty a {
+  color: var(--blue-ink);
+}
+.discover-inline-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+}
+.discover-inline-heading strong {
+  font-size: 14px;
+}
+.discover-inline-heading > span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.discover-event img {
+  width: 60px;
+  height: 74px;
+  object-fit: contain;
+  border-radius: 5px;
+  background: #111;
+  flex-shrink: 0;
+}
+.discover-event-icon {
+  max-width: 60px;
+  min-width: 60px;
+  height: 60px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--blue-soft);
+  color: var(--blue-ink);
+}
+.discover-services .button {
+  margin-top: 10px;
+}
+.menu-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.menu-items li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.menu-items strong {
+  font-size: 14px;
+}
+.menu-items b {
+  flex-shrink: 0;
+  font-size: 13px;
+}
+.menu-items small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+}
+.restaurant-menu .button {
+  min-height: 44px;
+}
+.qr-stand-context {
+  font-size: 12px;
+  color: var(--muted);
+}
+.qr-checkin > .stack {
+  gap: 10px;
+}
+.qr-checkin .qr-pass {
+  padding: 18px 15px;
+}
+.qr-checkin .qr-pass h2 {
+  font-size: 18px;
+}
+.qr-checkin .qr-pass p {
+  margin-top: 5px;
+  font-size: 12px;
+}
+.qr-checkin .qr-paper {
+  margin: 16px auto;
+}
+.qr-checkin .qr-note {
+  padding: 10px;
+  font-size: 11px;
+}
+.qr-checkin .qr-note p {
+  font-size: 11px;
+}
+.demo-visit-controls {
+  padding: 10px 0;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+}
+.demo-visit-controls summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+}
+.demo-visit-controls p {
+  color: var(--muted);
+  margin: 6px 0 10px;
+  font-size: 11px;
+}
+.demo-visit-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 10px;
+}
+.demo-visit-controls select {
+  min-height: 44px;
+  padding: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.fair-agenda .agenda-brandline {
+  margin: 0;
+  gap: 10px;
+}
+.fair-agenda .agenda-brandline img {
+  width: 80px;
+  height: 27px;
+}
+.fair-agenda .agenda-brandline > span {
+  font-size: 10px;
+}
+.fair-agenda .agenda-days {
+  padding-bottom: 7px;
+  gap: 6px;
+}
+.fair-agenda .agenda-day {
+  min-height: 62px;
+  flex-basis: 46px;
+  border-radius: 10px;
+}
+.fair-agenda .agenda-day > strong {
+  font-size: 20px;
+}
+.fair-agenda .agenda-date-heading {
+  margin: 10px 0 12px;
+  gap: 9px;
+}
+.fair-agenda .agenda-date-heading h2 {
+  font-size: 13px;
+}
+.fair-agenda .agenda-date-heading h2::first-letter {
+  text-transform: uppercase;
+}
+.fair-agenda .agenda-date-number {
+  width: 35px;
+  height: 35px;
+  font-size: 16px;
+}
+.fair-agenda .agenda-timeline {
+  padding-left: 16px;
+}
+.fair-agenda .agenda-entry {
+  padding: 0 0 16px 20px;
+  scroll-margin-top: 90px;
+}
+.fair-agenda .agenda-entry-top {
+  min-height: 21px;
+}
+.agenda-entry-content {
+  display: flex;
+  gap: 10px;
+  padding-top: 7px;
+}
+.agenda-entry-content > div {
+  flex: 1;
+  min-width: 0;
+}
+.agenda-poster {
+  width: 68px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+.agenda-poster img {
+  display: block;
+  width: 68px;
+  height: 85px;
+  object-fit: contain;
+  background: #111;
+  border-radius: 5px;
+}
+.fair-agenda .agenda-time {
+  margin: 0;
+  font-size: 10px;
+}
+.fair-agenda .agenda-entry h3 {
+  font-size: 14px;
+  line-height: 1.4;
+  margin: 4px 0;
+  letter-spacing: -0.02em;
+}
+.agenda-entry-content p {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.fair-agenda .agenda-item-place {
+  margin-top: 5px;
+  font-size: 10px;
+}
+.agenda-credit {
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 5px;
+}
+.fair-agenda .agenda-example {
+  margin: 8px 0;
+  font-size: 10px;
+}
+.fair-agenda .agenda-visit-info {
+  padding-top: 4px;
+  margin: 0;
+}
+.agenda-visit-info summary {
+  font-size: 12px;
+  font-weight: 600;
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+}
+.agenda-visit-info p {
+  margin: 4px 0 8px;
+}
+.fair-agenda .agenda-source {
+  margin: 0 12px 0 0;
+  font-size: 10px;
+}
+.agenda-update {
+  font-size: 11px;
+  color: var(--muted);
+  margin: 8px 0;
+}
+@media (max-width: 350px) {
+  .fair-identity > img {
+    width: 80px;
+    height: 27px;
+  }
+  .advertisement-copy > strong {
+    font-size: 17px;
+  }
+  .agenda-poster,
+  .agenda-poster img {
+    width: 57px;
+  }
+}
