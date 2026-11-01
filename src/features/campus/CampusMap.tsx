@@ -533,7 +533,7 @@ export default function CampusMap() {
             >
               <option value="entry">Ingreso de {plan.name}</option>
               {knownPoint?.planId === plan.id && (
-                <option value="nfc">Última visita NFC registrada</option>
+                <option value="nfc">Última visita confirmada</option>
               )}
             </select>
           </label>
@@ -600,7 +600,7 @@ export default function CampusMap() {
               onChange={(e) => setRouteSource(e.target.value)}
             >
               <option value="">Selecciona un ingreso</option>
-              {knownPoint && <option value="nfc">Última visita NFC registrada</option>}
+              {knownPoint && <option value="nfc">Última visita confirmada</option>}
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
                   Ingreso · {p.name}
@@ -645,8 +645,8 @@ export default function CampusMap() {
             espacio para abrir su ficha inferior.
           </p>
           <p>
-            <strong>Cómo llegar</strong> permite elegir un ingreso o la última visita NFC
-            registrada. La lectura de tarjetas se realiza desde Check-in.
+            <strong>Cómo llegar</strong> permite elegir un ingreso o la última visita
+            confirmada. Muestra tu QR al personal del stand desde Check-in.
           </p>
           <p>
             El recinto general es un esquema basado en la fotografía oficial; no está
