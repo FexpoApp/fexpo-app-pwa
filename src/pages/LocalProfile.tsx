@@ -1,5 +1,6 @@
+import { ProfileProgressLinks } from '@/ui/ProfileProgressLinks';
 import { useState } from 'react';
-import { Bell, Gift, LogOut, Monitor, Moon, Nfc, QrCode, Store, Sun } from 'lucide-react';
+import { Bell, LogOut, Monitor, Moon, QrCode, Store, Sun } from 'lucide-react';
 import { useLocalAccount } from '@/state/local-account';
 import { useExperience } from '@/state/experience';
 import { Art, MenuLink, Modal, Pill, SectionTitle } from '@/ui/components';
@@ -43,7 +44,7 @@ export function LocalProfile() {
           <Art name="level" size={58} />
         </div>
         <strong className="passport-title">La feria empieza contigo.</strong>
-        <p>Descubre stands y prueba tu tarjeta NFC.</p>
+        <p>Descubre stands y lleva tu pase QR.</p>
         <div className="passport-stats">
           <span>
             <b>{state.points}</b>
@@ -61,18 +62,12 @@ export function LocalProfile() {
       </div>
       <div className="card menu-group">
         <MenuLink
-          to="/scan"
-          icon={Nfc}
-          title="Leer mi tarjeta NFC"
-          description="Lectura real, sin backend"
-        />
-        <MenuLink
           to="/stands"
           icon={Store}
           title="Explorar stands"
           description="Catálogo local de demostración"
         />
-        <MenuLink to="/missions" icon={Gift} title="Mis premios y misiones" tone="purple" />
+        <ProfileProgressLinks />
         <MenuLink to="/notifications" icon={Bell} title="Mis avisos" />
         <MenuLink
           to="/my-qr"

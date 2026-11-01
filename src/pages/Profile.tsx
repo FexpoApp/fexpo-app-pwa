@@ -1,3 +1,4 @@
+import { ProfileProgressLinks } from '@/ui/ProfileProgressLinks';
 import { LIVE, LOCAL } from '@/services/config';
 import { LocalProfile } from './LocalProfile';
 import { LiveProfile } from './LiveAccount';
@@ -7,8 +8,6 @@ import {
   Bell,
   Check,
   ChevronRight,
-  Nfc as Contactless,
-  Gift,
   LogOut,
   MapPin,
   Monitor,
@@ -61,7 +60,7 @@ function DemoProfilePage() {
           <span className="flip-front">
             <span className="row passport-top">
               <span>MI PASAPORTE DE FERIA</span>
-              <Contactless size={22} />
+              <QrCode size={22} />
             </span>
             <span className="row">
               <span className="grow">
@@ -131,7 +130,7 @@ function DemoProfilePage() {
           title="Explorar stands"
           description="Empresas, productos y experiencias"
         />
-        <MenuLink to="/missions" icon={Gift} title="Mis premios y misiones" tone="purple" />
+        <ProfileProgressLinks />
         <MenuLink to="/notifications" icon={Bell} title="Mis avisos" />
       </div>
       <SectionTitle>Apariencia</SectionTitle>

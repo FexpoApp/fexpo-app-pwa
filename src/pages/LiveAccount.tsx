@@ -1,7 +1,8 @@
+import { ProfileProgressLinks } from '@/ui/ProfileProgressLinks';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import QRCode from 'react-qr-code';
-import { Bell, Gift, LogOut, Monitor, Moon, QrCode, RefreshCw, Store, Sun } from 'lucide-react';
+import { Bell, LogOut, Monitor, Moon, QrCode, RefreshCw, Store, Sun } from 'lucide-react';
 import { useLive, loadQr, message, syncProgress, flushPending } from '@/state/live';
 import { request } from '@/services/api';
 import { EVENT_ID, eventReady } from '@/services/config';
@@ -118,7 +119,7 @@ export function LiveProfile() {
           title="Explorar stands"
           description="Empresas y experiencias"
         />
-        <MenuLink to="/missions" icon={Gift} title="Mi progreso y premios" tone="purple" />
+        <ProfileProgressLinks />
         <MenuLink to="/notifications" icon={Bell} title="Mis avisos" />
       </div>
       <SectionTitle>Apariencia</SectionTitle>
