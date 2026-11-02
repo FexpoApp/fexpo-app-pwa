@@ -237,6 +237,7 @@ Para aislar las pruebas de un servidor abierto, configurar `PWA_TEST_PORT` antes
 Última verificación del 01/11/2026, Descubre, QR y plano oficial:
 
 - **63 pruebas unitarias aprobadas** en 13 archivos, incluidas fechas sin hora, prioridad de API sobre afiches y cancelaciones recibidas.
+- **18 pruebas locales aprobadas** tras adecuar la suite a QR. La bienvenida crea la sesión de prueba antes de abrir el pase; las pruebas esperan a que termine la entrada antes de navegar. Se conservan los siete planos en 2D/3D, GPS, modo offline y cuatro anchos. NFC permanece desactivado, sin omitir pruebas ni retirar el modo local de CI.
 - **28 pruebas live de navegador aprobadas** con servicios simulados: QR y actualización tras confirmación del personal, sesión, ausencia de lectura NFC, catálogo, menú no publicado, mapa, contactos y agenda con error/reintento.
 - **19 casos demo verificados**, incluyendo la repetición de los casos afectados por el ajuste del service worker: navegación, menú ilustrativo, carrusel automático/pausa, persistencia y recursos offline. Los afiches y el PDF abren como archivos con el service worker activo.
 - Tipos y compilaciones demo/live aprobados. La compilación final usa la configuración live local habitual, sin las variables temporales de QA.

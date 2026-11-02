@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
-async function setup(page: Page, denyNfc = false) {
+async function setup(page: Page) {
   const apiCalls: string[] = [];
   page.on('request', (request) => {
     if (
@@ -10,71 +10,38 @@ async function setup(page: Page, denyNfc = false) {
       apiCalls.push(request.url());
   });
   await page.route('**/api/**', (route) => route.abort());
-  await page.addInitScript(
-    ({ denyNfc }) => {
-      const w = window as any;
-      w.__audio = [];
-      w.__vibrations = [];
-      Object.defineProperty(navigator, 'vibrate', {
-        value: (pattern: unknown) => {
-          w.__vibrations.push(pattern);
-          return true;
-        },
-      });
-      w.Audio = class {
-        onplaying: (() => void) | null = null;
-        onended: (() => void) | null = null;
-        onerror: (() => void) | null = null;
-        constructor(public src: string) {}
-        pause() {}
-        load() {}
-        removeAttribute() {}
-        async play() {
-          w.__audio.push(this.src);
-          queueMicrotask(() => {
-            this.onplaying?.();
-            setTimeout(() => this.onended?.(), 20);
-          });
-        }
-      };
-      w.NDEFReader = class extends EventTarget {
-        async scan({ signal }: { signal: AbortSignal }) {
-          w.__reader = this;
-          w.__signal = signal;
-          if (denyNfc) throw new DOMException('Denied', 'NotAllowedError');
-        }
-      };
-    },
-    { denyNfc },
-  );
+  await page.addInitScript(() => {
+    const w = window as any;
+    w.__nfcAttempts = 0;
+    w.NDEFReader = class extends EventTarget {
+      constructor() {
+        super();
+        w.__nfcAttempts++;
+      }
+      async scan() {
+        throw new Error('NFC debe permanecer desactivado');
+      }
+    };
+  });
   return apiCalls;
 }
-async function emit(page: Page, uid = '04:a1:b2:c3', records = ['Tarjeta de prueba']) {
-  await page.evaluate(
-    ({ uid, records }) => {
-      const event = new Event('reading');
-      Object.assign(event, {
-        serialNumber: uid,
-        message: {
-          records: records.map((text) => ({
-            recordType: 'text',
-            encoding: 'utf-8',
-            data: new DataView(new TextEncoder().encode(text).buffer),
-          })),
-        },
-      });
-      (window as any).__reader.dispatchEvent(event);
-    },
-    { uid, records },
-  );
+async function enterTrial(page: Page) {
+  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  // Rehydration is async. Do not navigate away until the session and Shell are ready.
+  await expect(page.locator('.bottom-nav')).toBeVisible();
 }
+async function expectNoNfc(page: Page) {
+  expect(await page.evaluate(() => (window as any).__nfcAttempts)).toBe(0);
+  await expect(page.getByRole('button', { name: /Leer.*NFC|Ubicarme con NFC/ })).toHaveCount(0);
+}
+
 test('entrada de prueba sin Google ni backend y perfil persistido', async ({ page }) => {
   const api = await setup(page);
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /FIPAZ/ })).toBeVisible();
   await expect(page.locator('.bottom-nav')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeDisabled();
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await expect(page.locator('.app-header .points-pill')).toHaveText('0');
   await page.getByRole('link', { name: 'Perfil', exact: true }).last().click();
@@ -91,7 +58,7 @@ test('Google queda como mock y cerrar la prueba devuelve a bienvenida', async ({
   await page.goto('/');
   await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeDisabled();
   await expect(page.getByText('Próximamente', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await page.getByRole('link', { name: 'Perfil', exact: true }).last().click();
   await expect(page.getByText('Visitante · modo de prueba')).toBeVisible();
   await page.getByRole('button', { name: 'Cerrar sesión', exact: true }).click();
@@ -101,68 +68,71 @@ test('Google queda como mock y cerrar la prueba devuelve a bienvenida', async ({
   await expect(page.getByRole('button', { name: 'Entrar y probar la app' })).toBeVisible();
   expect(api).toEqual([]);
 });
-test('lector real sin Google: acepta cualquier etiqueta NDEF, sonido 7, vibración y ningún punto', async ({
+test('acceso QR de bienvenida abre la prueba sin Google, NFC ni puntos reales', async ({
   page,
 }) => {
   const api = await setup(page);
   await page.goto('/');
-  await page.getByRole('link', { name: 'Probar mi NFC' }).click();
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await emit(page, '04:a1:b2:c3', [
-    'https://example.org/mi-tarjeta',
-    '<script>no se ejecuta</script>',
-  ]);
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toBeVisible();
-  await expect(page.getByText('04A1B2C3', { exact: true })).toBeVisible();
-  await expect(page.getByText('<script>no se ejecuta</script>', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Ver mi pase QR', exact: true }).click();
+  await expect(page).toHaveURL('/scan');
+  await expect(page.getByRole('heading', { name: 'Muéstralo en el stand' })).toBeVisible();
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expect(page.getByText('CÓDIGO DE DEMOSTRACIÓN', { exact: true })).toBeVisible();
   await expect(page.locator('.app-header .points-pill')).toHaveText('0');
-  expect(page.url()).toContain('/nfc-test');
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        (window as any).__audio.some((src: string) => src.endsWith('sonido-07.mp3')),
-      ),
-    )
-    .toBe(true);
-  expect(await page.evaluate(() => (window as any).__vibrations)).toEqual([80]);
-  await expect.poll(() => page.evaluate(() => (window as any).__signal.aborted)).toBe(true);
+  await expectNoNfc(page);
   expect(api).toEqual([]);
 });
-test('UID no expuesto conserva la evidencia de lectura NDEF', async ({ page }) => {
-  await setup(page);
+
+test('la antigua ruta NFC requiere entrada local y redirige al pase QR', async ({ page }) => {
+  const api = await setup(page);
   await page.goto('/nfc-test');
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await emit(page, '');
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toBeVisible();
-  await expect(page.getByText('Chrome no expuso el UID')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Entrar y probar la app' })).toBeVisible();
+  await enterTrial(page);
+  await expect(page).toHaveURL('/scan');
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expectNoNfc(page);
+  expect(api).toEqual([]);
 });
-test('cancelar y tarjeta incompatible nunca muestran éxito', async ({ page }) => {
-  await setup(page);
-  await page.goto('/nfc-test');
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await page.getByRole('button', { name: 'Cancelar lectura' }).click();
-  await emit(page);
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await page.evaluate(() => (window as any).__reader.dispatchEvent(new Event('readingerror')));
-  await expect(page.getByRole('alert')).toContainText('formato NDEF');
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toHaveCount(0);
+
+test('mostrar y recargar el QR no registra visitas ni suma puntos', async ({ page }) => {
+  const api = await setup(page);
+  await page.goto('/');
+  await enterTrial(page);
+  await page.goto('/scan?stand=stand-kawsay-salud');
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expect(page.getByText('En Kawsay Salud', { exact: true })).toBeVisible();
+  await page.reload();
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expect(page.locator('.app-header .points-pill')).toHaveText('0');
+  await expectNoNfc(page);
+  await page.goto('/profile');
+  await expect(page.getByRole('link', { name: 'Misiones y progreso', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Mis premios', exact: true })).toBeVisible();
+  expect(api).toEqual([]);
 });
-test('permiso NFC rechazado permite reintentar', async ({ page }) => {
-  await setup(page, true);
-  await page.goto('/nfc-test');
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await expect(page.getByRole('alert')).toContainText('Permite el acceso a NFC');
-  await expect(page.getByRole('button', { name: 'Leer mi tarjeta NFC' })).toBeEnabled();
+
+test('cancelar una confirmación QR de ejemplo no modifica el saldo local', async ({ page }) => {
+  const api = await setup(page);
+  await page.goto('/');
+  await enterTrial(page);
+  await page.goto('/scan');
+  await page.getByText('Probar una visita de ejemplo', { exact: true }).click();
+  await page.getByRole('button', { name: 'Simular confirmación QR', exact: true }).click();
+  await page.getByRole('button', { name: 'Cancelar lectura', exact: true }).click();
+  await page.waitForTimeout(1700);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('.app-header .points-pill')).toHaveText('0');
+  await expectNoNfc(page);
+  expect(api).toEqual([]);
 });
-test('sin API y sin red: perfil guardado, mapa y NFC siguen disponibles', async ({
+
+test('sin API y sin red: perfil guardado, mapa y pase QR siguen disponibles', async ({
   page,
   context,
 }) => {
   const api = await setup(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
-  await expect(page.locator('.bottom-nav')).toBeVisible();
+  await enterTrial(page);
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -172,16 +142,17 @@ test('sin API y sin red: perfil guardado, mapa y NFC siguen disponibles', async 
   await page.goto('/map');
   await expect(page.getByRole('region', { name: 'Mapa interactivo FIPAZ' })).toBeVisible();
   await page.goto('/scan');
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await emit(page);
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toBeVisible();
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expect(page.locator('.app-header .points-pill')).toHaveText('0');
+  await expectNoNfc(page);
   expect(api).toEqual([]);
   await context.setOffline(false);
 });
+
 test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page }) => {
   await setup(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=2d');
   await page.getByRole('button', { name: '2D', exact: true }).click();
@@ -206,7 +177,7 @@ test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page 
 test('las siete plantas mantienen contorno y cantidad de lotes en 2D y 3D', async ({ page }) => {
   await setup(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   for (const plan of PLAN_GEOMETRY) {
     await page.goto(`/map?plan=${plan.id}&view=3d`);
     await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', plan.id);
@@ -219,27 +190,31 @@ test('las siete plantas mantienen contorno y cantidad de lotes en 2D y 3D', asyn
     await expect(page.locator('.indoor-svg path').first()).toHaveAttribute('d', plan.outline);
   }
 });
-test('Mapa no abre otro lector: NFC permanece en Check-in sin acreditar puntos locales', async ({
+test('mapa y Check-in no abren lectores NFC ni acreditan una visita al mostrar QR', async ({
   page,
 }) => {
   const api = await setup(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await page.goto('/map');
   await expect(page.locator('.indoor-viewer')).toHaveAttribute('data-mode', '2d');
-  await expect(page.getByRole('button', { name: 'Ubicarme con NFC' })).toHaveCount(0);
+  await expectNoNfc(page);
   await page.goto('/scan');
-  await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-  await emit(page, '04:a1:b2:c3', ['FIPAZ:2026:STAND:stand-altura-labs']);
-  await expect(page.getByRole('heading', { name: '¡Tarjeta detectada!' })).toBeVisible();
-  await page.goto('/map');
+  await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+  await expectNoNfc(page);
+  await page.goto('/map?plan=red-lower&view=2d');
+  await expect(page.locator('.indoor-viewer')).toHaveAttribute(
+    'data-position-source',
+    'unconfirmed',
+  );
   await expect(page.locator('.app-header .points-pill')).toHaveText('0');
   expect(api).toEqual([]);
 });
+
 test('cámara interior, mismo pabellón en 2D y 3D y ayuda GPS', async ({ page }) => {
   await setup(page);
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await page.goto('/map?plan=red-lower&view=3d');
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', 'red-lower');
   const marker = page.getByRole('button', { name: /Ver Kawsay Salud/ });
@@ -273,7 +248,7 @@ test('sin WebGL se activa el plano original 2D', async ({ page }) => {
     } as any;
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=3d');
   await expect(page.getByRole('status')).toContainText('Vista 2D activada');
@@ -301,7 +276,7 @@ async function gpsSetup(page: Page) {
     });
   });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Entrar y probar la app' }).click();
+  await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=2d');
 }
@@ -362,7 +337,7 @@ test('GPS: permiso rechazado, cambio de planta y salida cancelan el watch', asyn
   await expect.poll(() => page.evaluate(() => (window as any).__gpsCleared.length)).toBe(3);
 });
 for (const width of [320, 390, 768, 1440])
-  test(`entrada y NFC adaptados a ${width}px`, async ({ page }) => {
+  test(`entrada y QR adaptados a ${width}px`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await setup(page);
@@ -377,15 +352,15 @@ for (const width of [320, 390, 768, 1440])
         path: `test-results/screenshots/local/welcome-${width}.png`,
         fullPage: true,
       });
-    await page.getByRole('link', { name: 'Probar mi NFC' }).click();
-    await page.getByRole('button', { name: 'Leer mi tarjeta NFC' }).click();
-    await emit(page);
+    await page.getByRole('button', { name: 'Ver mi pase QR', exact: true }).click();
+    await expect(page.locator('.qr-paper svg')).toHaveCount(1);
+    await expectNoNfc(page);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
     );
     if (width === 390)
       await page.screenshot({
-        path: 'test-results/screenshots/local/nfc-reading-fixture.png',
+        path: 'test-results/screenshots/local/qr-pass.png',
         fullPage: true,
       });
     expect(errors).toEqual([]);

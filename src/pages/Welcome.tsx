@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { ArrowUpRight, ArrowRight, QrCode } from 'lucide-react';
-import { LOCAL } from '@/services/config';
+import { LOCAL, NFC_ENABLED } from '@/services/config';
 import { useLocalAccount } from '@/state/local-account';
 import { Brand } from '@/ui/Brand';
 
@@ -28,13 +28,15 @@ function GoogleMark() {
   );
 }
 export function Welcome() {
+  const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  async function enterTrial() {
+  async function enterTrial(destination?: string) {
     setBusy(true);
     setError('');
     try {
       await useLocalAccount.getState().enterTrial();
+      if (destination) navigate(destination);
     } catch {
       setBusy(false);
       setError('No se pudo abrir la prueba. Inténtalo de nuevo.');
@@ -98,11 +100,11 @@ export function Welcome() {
           <p className="welcome-privacy">
             Explora sin cuenta. Tu prueba se guarda solo en este dispositivo.
           </p>
-          <Link className="welcome-nfc" to="/scan">
+          <button className="welcome-nfc" disabled={busy} onClick={() => void enterTrial('/scan')}>
             <QrCode size={20} />
             Ver mi pase QR
             <ArrowUpRight size={17} />
-          </Link>
+          </button>
         </div>
       </div>
     </main>
@@ -114,6 +116,6 @@ export function LocalEntry() {
   if (!LOCAL) return <Outlet />;
   if (!account.ready)
     return <div className="welcome-screen" role="status" aria-label="Preparando Fexpo" />;
-  if (!account.profile && pathname !== '/nfc-test') return <Welcome />;
+  if (!account.profile && (!NFC_ENABLED || pathname !== '/nfc-test')) return <Welcome />;
   return <Outlet />;
 }
