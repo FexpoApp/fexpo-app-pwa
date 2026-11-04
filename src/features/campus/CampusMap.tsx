@@ -28,6 +28,8 @@ import IndoorPlan from './IndoorPlan';
 import { CampusOverview } from './CampusOverview';
 import { ServiceMark } from './ServiceMark';
 import { routeThroughAisles } from './routing';
+import { GAMLP, isGamlpLot } from '@/features/sectors/gamlp';
+import { SectorDirectory } from '@/features/sectors/SectorDirectory';
 import type { CampusCamera } from './IndoorScene';
 import './campus.css';
 const Scene = lazy(() => import('./IndoorScene'));
@@ -39,15 +41,19 @@ const buildings = [
   { id: 'food', name: 'Comidas' },
 ];
 export default function CampusMap() {
+  const [params, setParams] = useSearchParams();
+  const curatedSector = params.get('sector') === GAMLP.id;
   const live = useLive();
   const plans = LIVE
-    ? PLAN_GEOMETRY.filter((candidate) =>
-        live.map?.floors.some(
-          (floor) =>
-            floor.name === candidate.name &&
-            floor.outline === candidate.outline &&
-            floor.viewBox === candidate.viewBox,
-        ),
+    ? PLAN_GEOMETRY.filter(
+        (candidate) =>
+          live.map?.floors.some(
+            (floor) =>
+              floor.name === candidate.name &&
+              floor.outline === candidate.outline &&
+              floor.viewBox === candidate.viewBox,
+          ) ||
+          (curatedSector && candidate.id === GAMLP.planId),
       )
     : PLAN_GEOMETRY;
   const stands = LIVE
@@ -67,7 +73,6 @@ export default function CampusMap() {
     : STANDS;
 
   const points = LIVE ? pointsForStands(stands) : CAMPUS_POINTS;
-  const [params, setParams] = useSearchParams();
   const requestedStand = stands.find((s) => s.id === params.get('stand'));
   const plan =
     plans.find((p) => p.id === (params.get('plan') || requestedStand?.planId)) || plans[0];
@@ -98,6 +103,8 @@ export default function CampusMap() {
   );
   const lot = selectedLot >= 0 ? PLAN_LOTS[plan.id][selectedLot] : null;
   const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
+  const municipalSelected = !!lot && isGamlpLot(plan.id, lot[0]);
+  const municipalHere = plan.id === GAMLP.planId;
   const destination = points.find((p) => p.id === requestedStand?.id);
   const destinationPlan = plans.find((p) => p.id === destination?.planId);
   const position = gps.position || (knownPoint?.planId === plan.id ? knownPoint : plan.origin);
@@ -119,6 +126,18 @@ export default function CampusMap() {
     ],
   );
   const results = stands.filter((s) => matchesStand(s, query));
+  const municipalResult =
+    !!query.trim() &&
+    'gamlp gobierno autónomo municipal de la paz emprendedores p14-a p14-b'
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .includes(
+        query
+          .trim()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, ''),
+      );
   const sheetOpen = params.get('detail') === '1' && !!lot && !general;
   useEffect(() => {
     const observer = new MutationObserver(() =>
@@ -136,7 +155,14 @@ export default function CampusMap() {
   function changePlan(id: string) {
     setQuery('');
     setRouting(false);
-    setParams({ plan: id, view: mode }, { replace: true });
+    setParams(
+      {
+        plan: id,
+        view: mode,
+        ...(curatedSector && id === GAMLP.planId ? { sector: GAMLP.id } : {}),
+      },
+      { replace: true },
+    );
   }
   function changeMode(view: '2d' | '3d') {
     setFailed(false);
@@ -156,6 +182,7 @@ export default function CampusMap() {
     const value = PLAN_LOTS[plan.id][index];
     if (!value) return;
     const stand = standAtLotIn(stands, plan.id, value[0]);
+    const municipal = isGamlpLot(plan.id, value[0]);
     setRouting(false);
     setParams(
       {
@@ -163,7 +190,7 @@ export default function CampusMap() {
         view: mode,
         lot: String(value[0]),
         detail: '1',
-        ...(stand ? { stand: stand.id } : {}),
+        ...(municipal ? { sector: GAMLP.id } : stand ? { stand: stand.id } : {}),
       },
       { replace: true },
     );
@@ -290,7 +317,21 @@ export default function CampusMap() {
         </div>
         {query && (
           <div className="indoor-results">
-            <small>{results.length} stands</small>
+            <small>{results.length + Number(municipalResult)} resultados</small>
+            {municipalResult && (
+              <Link
+                className="municipal-search-result"
+                to={GAMLP.mapUrl}
+                onClick={() => setQuery('')}
+              >
+                <img src={GAMLP.logo} alt="" />
+                <span>
+                  <strong>Sector GAMLP</strong>
+                  <small>P14-A + P14-B · Amarillo · Alta</small>
+                </span>
+                <ChevronRight size={17} />
+              </Link>
+            )}
             {results.length ? (
               results.map((s) => (
                 <button key={s.id} onClick={() => select(s.id)}>
@@ -301,9 +342,9 @@ export default function CampusMap() {
                   <ChevronRight size={17} />
                 </button>
               ))
-            ) : (
+            ) : !municipalResult ? (
               <p>No encontramos ese stand.</p>
-            )}
+            ) : null}
           </div>
         )}
       </div>
@@ -353,6 +394,7 @@ export default function CampusMap() {
                 route={route}
                 showAvatar={!!gps.position || knownPoint?.planId === plan.id}
                 focusSelection={!routing && selectedLot >= 0}
+                municipalSector={municipalHere}
               />
             ) : (
               <Suspense
@@ -373,6 +415,16 @@ export default function CampusMap() {
                   selectedLot={selectedLot < 0 ? null : selectedLot}
                   onSelectLot={selectLot}
                   cameraRef={camera}
+                  lotColors={
+                    municipalHere
+                      ? PLAN_LOTS[plan.id].map(([code]) =>
+                          isGamlpLot(plan.id, code) ? '#b2aa3d' : plan.color,
+                        )
+                      : undefined
+                  }
+                  selectionBounds={
+                    municipalSelected ? { x: 950, y: 271, width: 143, height: 285 } : undefined
+                  }
                   onFailure={() => {
                     changeMode('2d');
                     setFailed(true);
@@ -382,6 +434,24 @@ export default function CampusMap() {
             )}
             {mode === '3d' && (
               <div className="indoor-markers" key={plan.id}>
+                {municipalHere && (
+                  <button
+                    className="indoor-marker municipal-map-marker"
+                    data-sector="gamlp"
+                    data-plan-x="1021"
+                    data-plan-y="400"
+                    data-elevation="1.1"
+                    aria-label="Ver sector GAMLP, P14-A y P14-B"
+                    onClick={() =>
+                      selectLot(PLAN_LOTS[plan.id].findIndex(([code]) => code === 'P14-A'))
+                    }
+                  >
+                    <img src={GAMLP.logo} alt="" />
+                    <span>
+                      GAMLP<small>P14-A + P14-B</small>
+                    </span>
+                  </button>
+                )}
                 {plan.structures
                   .filter((s) => s.x !== undefined && s.y !== undefined)
                   .map((s, i) => (
@@ -513,6 +583,14 @@ export default function CampusMap() {
           Vista 2D activada: no se pudo iniciar el 3D.
         </p>
       )}
+      {curatedSector &&
+        LIVE &&
+        !live.map?.floors.some(
+          (floor) =>
+            floor.name === plan.name &&
+            floor.outline === plan.outline &&
+            floor.viewBox === plan.viewBox,
+        ) && <p className="map-render-notice">Plano de referencia · fotografía del 04/11/2026.</p>}
       {gps.error && (
         <p className="map-render-notice" role="alert">
           {gps.error}
@@ -556,33 +634,72 @@ export default function CampusMap() {
         </Modal>
       )}
       {sheetOpen && (
-        <BottomSheet title={selectedStand?.name || 'Espacio ' + lot![0]} onClose={closeSheet}>
-          <div className="sheet-stand-summary">
-            {selectedStand ? (
-              <CategoryTile category={selectedStand.category} />
-            ) : (
-              <span className="sheet-lot-icon">
-                <Store size={25} />
-              </span>
-            )}
-            <span>
-              <strong>{selectedStand?.boothCode || 'Espacio ' + lot![0]}</strong>
-              <small>{selectedStand ? plan.name : 'Expositor por publicar'}</small>
-            </span>
-          </div>
-          {selectedStand && (
-            <div className="sheet-actions">
-              <Link className="button" to={'/stands/' + selectedStand.id} onClick={closeSheet}>
-                Ver perfil
-                <ChevronRight size={16} />
+        <BottomSheet
+          title={municipalSelected ? 'Sector GAMLP' : selectedStand?.name || 'Espacio ' + lot![0]}
+          onClose={closeSheet}
+        >
+          {municipalSelected ? (
+            <div className="municipal-sheet">
+              <div className="sector-sheet-identity">
+                <img src={GAMLP.logo} alt="Escudo municipal de La Paz" />
+                <span>
+                  <strong>{GAMLP.name}</strong>
+                  <small>P14-A + P14-B · Planta alta · Bloque amarillo</small>
+                </span>
+              </div>
+              <SectorDirectory />
+              <div className="sheet-actions">
+                <Link className="button" to={GAMLP.profileUrl} onClick={closeSheet}>
+                  Ver emprendedores
+                  <ChevronRight size={16} />
+                </Link>
+                <Link
+                  className="button secondary"
+                  to={GAMLP.profileUrl + '?tab=visit'}
+                  onClick={closeSheet}
+                >
+                  <Store size={17} />
+                  Visita QR
+                </Link>
+              </div>
+              <Link
+                className="sector-demo-link"
+                to={GAMLP.profileUrl + '?demo=1'}
+                onClick={closeSheet}
+              >
+                Probar demo del sector
               </Link>
-              {destination && (
-                <button className="button secondary" onClick={openRoute}>
-                  <Navigation size={17} />
-                  Cómo llegar
-                </button>
-              )}
             </div>
+          ) : (
+            <>
+              <div className="sheet-stand-summary">
+                {selectedStand ? (
+                  <CategoryTile category={selectedStand.category} />
+                ) : (
+                  <span className="sheet-lot-icon">
+                    <Store size={25} />
+                  </span>
+                )}
+                <span>
+                  <strong>{selectedStand?.boothCode || 'Espacio ' + lot![0]}</strong>
+                  <small>{selectedStand ? plan.name : 'Expositor por publicar'}</small>
+                </span>
+              </div>
+              {selectedStand && (
+                <div className="sheet-actions">
+                  <Link className="button" to={'/stands/' + selectedStand.id} onClick={closeSheet}>
+                    Ver perfil
+                    <ChevronRight size={16} />
+                  </Link>
+                  {destination && (
+                    <button className="button secondary" onClick={openRoute}>
+                      <Navigation size={17} />
+                      Cómo llegar
+                    </button>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </BottomSheet>
       )}
@@ -645,8 +762,8 @@ export default function CampusMap() {
             espacio para abrir su ficha inferior.
           </p>
           <p>
-            <strong>Cómo llegar</strong> permite elegir un ingreso o la última visita
-            confirmada. Muestra tu QR al personal del stand desde Check-in.
+            <strong>Cómo llegar</strong> permite elegir un ingreso o la última visita confirmada.
+            Muestra tu QR al personal del stand desde Check-in.
           </p>
           <p>
             El recinto general es un esquema basado en la fotografía oficial; no está
