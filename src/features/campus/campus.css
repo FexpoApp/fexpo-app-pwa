@@ -197,7 +197,7 @@
   cursor: pointer;
   outline: none;
 }
-.indoor-svg [role='button']:focus-visible rect {
+.indoor-svg [role='button']:focus-visible :is(rect, path) {
   stroke: var(--blue);
   stroke-width: 5px;
 }
@@ -898,6 +898,13 @@
 }
 .compact-map .overview-caption {
   bottom: 62px;
+}
+@media (min-width: 1040px) {
+  /* The desktop preview starts 32px below the viewport; keep map controls
+     above its fixed bottom navigation, just as on mobile. */
+  .compact-map {
+    height: calc(100dvh - 149px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
 }
 .map-gps-indicator {
   position: absolute;
