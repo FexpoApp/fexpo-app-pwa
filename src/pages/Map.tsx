@@ -2,7 +2,7 @@ import { lazy, Suspense } from 'react';
 import { LIVE } from '@/services/config';
 import { PublishedCampusMap } from '@/features/campus/PublishedCampusMap';
 import { useLive } from '@/state/live';
-import { PLAN_GEOMETRY } from '@/data/map-plans';
+import { PLAN_GEOMETRY, PHOTO_PLAN_REVISION } from '@/data/map-plans';
 import { useSearchParams } from 'react-router-dom';
 import '@/features/campus/campus.css';
 const CampusMap = lazy(() => import('@/features/campus/CampusMap'));
@@ -11,6 +11,7 @@ export function MapPage() {
   const map = useLive((state) => state.map);
   const campusPublished =
     !LIVE ||
+    params.get('reference') === PHOTO_PLAN_REVISION ||
     params.get('sector') === 'gamlp' ||
     (!!map?.floors.length &&
       map.floors.every((floor) =>

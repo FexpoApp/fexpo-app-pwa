@@ -1,6 +1,7 @@
 import { matchesStand } from '@/services/stand-search';
 import { useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
+import { PHOTO_PLAN_REVISION } from '@/data/map-plans';
 import { Search } from 'lucide-react';
 import { useLive } from '@/state/live';
 import { CampusOverview } from './CampusOverview';
@@ -101,6 +102,9 @@ export function PublishedCampusMap() {
           ))}
         </div>
       )}
+      <Link className="footnote map-reference-link" to={'/map?reference=' + PHOTO_PLAN_REVISION}>
+        Ver plano actualizado según fotografías · 04/11
+      </Link>
     </section>
   );
 }

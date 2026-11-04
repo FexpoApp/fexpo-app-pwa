@@ -18,12 +18,18 @@ import {
 import { STANDS } from '@/data/demo-data';
 import { LIVE } from '@/services/config';
 import { useLive } from '@/state/live';
-import { PLAN_GEOMETRY, PLAN_LOTS } from '@/data/map-plans';
+import {
+  PLAN_GEOMETRY,
+  PLAN_LOTS,
+  PHOTO_PLAN_REVISION,
+  lotDetail,
+  lotLabel,
+} from '@/data/map-plans';
 import { CategoryTile, Modal } from '@/ui/components';
 import { BottomSheet } from '@/ui/BottomSheet';
 import { useCampusLocation } from './location';
 import { useRelativeGps } from './gps';
-import { CAMPUS_POINTS, lotAtPublishedPosition, pointsForStands, standAtLotIn } from './model';
+import { CAMPUS_POINTS, publishedLotCode, pointsForStands, standAtLotIn } from './model';
 import IndoorPlan from './IndoorPlan';
 import { CampusOverview } from './CampusOverview';
 import { ServiceMark } from './ServiceMark';
@@ -32,6 +38,16 @@ import { GAMLP, isGamlpLot } from '@/features/sectors/gamlp';
 import { SectorDirectory } from '@/features/sectors/SectorDirectory';
 import type { CampusCamera } from './IndoorScene';
 import './campus.css';
+import {
+  companiesAtLot,
+  findPhotoPlacements,
+  photoCompany,
+  PHOTO_COMPANIES,
+  placementMapUrl,
+  companyProfileUrl,
+} from '@/features/exhibitors/model';
+import { CompanyRows } from '@/features/exhibitors/CompanyRows';
+import { CompanyLogo } from '@/features/exhibitors/CompanyLogo';
 const Scene = lazy(() => import('./IndoorScene'));
 const buildings = [
   { id: 'red', name: 'Rojo' },
@@ -41,38 +57,49 @@ const buildings = [
   { id: 'food', name: 'Comidas' },
 ];
 export default function CampusMap() {
-  const [params, setParams] = useSearchParams();
+  const [params, setSearchParams] = useSearchParams();
   const curatedSector = params.get('sector') === GAMLP.id;
+  const photographicReference = params.get('reference') === PHOTO_PLAN_REVISION;
+  function setParams(
+    value: URLSearchParams | Record<string, string>,
+    options?: { replace?: boolean },
+  ) {
+    const next = new URLSearchParams(value);
+    if (photographicReference) next.set('reference', PHOTO_PLAN_REVISION);
+    setSearchParams(next, options);
+  }
   const live = useLive();
-  const plans = LIVE
-    ? PLAN_GEOMETRY.filter(
-        (candidate) =>
-          live.map?.floors.some(
-            (floor) =>
-              floor.name === candidate.name &&
-              floor.outline === candidate.outline &&
-              floor.viewBox === candidate.viewBox,
-          ) ||
-          (curatedSector && candidate.id === GAMLP.planId),
-      )
-    : PLAN_GEOMETRY;
-  const stands = LIVE
-    ? live.stands.map((stand) => {
-        const floor = live.map?.floors.find((floor) =>
-          floor.stands.some((item) => item.standId === stand.id),
-        );
-        const plan = plans.find((candidate) => candidate.name === floor?.name);
-        const published = floor?.stands.find((item) => item.standId === stand.id);
-        return {
-          ...stand,
-          planId: plan && published ? plan.id : '',
-          lotCode:
-            plan && published ? lotAtPublishedPosition(plan, published.x, published.y) : null,
-        };
-      })
-    : STANDS;
+  const plans =
+    LIVE && !photographicReference
+      ? PLAN_GEOMETRY.filter(
+          (candidate) =>
+            live.map?.floors.some(
+              (floor) =>
+                floor.name === candidate.name &&
+                floor.outline === candidate.outline &&
+                floor.viewBox === candidate.viewBox,
+            ) ||
+            (curatedSector && candidate.id === GAMLP.planId),
+        )
+      : PLAN_GEOMETRY;
+  const stands = photographicReference
+    ? []
+    : LIVE
+      ? live.stands.map((stand) => {
+          const floor = live.map?.floors.find((floor) =>
+            floor.stands.some((item) => item.standId === stand.id),
+          );
+          const plan = plans.find((candidate) => candidate.name === floor?.name);
+          const published = floor?.stands.find((item) => item.standId === stand.id);
+          return {
+            ...stand,
+            planId: plan && published ? plan.id : '',
+            lotCode: plan && published ? publishedLotCode(plan, published) : null,
+          };
+        })
+      : STANDS;
 
-  const points = LIVE ? pointsForStands(stands) : CAMPUS_POINTS;
+  const points = photographicReference ? [] : LIVE ? pointsForStands(stands) : CAMPUS_POINTS;
   const requestedStand = stands.find((s) => s.id === params.get('stand'));
   const plan =
     plans.find((p) => p.id === (params.get('plan') || requestedStand?.planId)) || plans[0];
@@ -103,6 +130,9 @@ export default function CampusMap() {
   );
   const lot = selectedLot >= 0 ? PLAN_LOTS[plan.id][selectedLot] : null;
   const selectedStand = lot ? standAtLotIn(stands, plan.id, lot[0]) : null;
+  const occupants = photographicReference && lot ? companiesAtLot(plan.id, lot[0]) : [];
+  const photoResults = photographicReference ? findPhotoPlacements(query).slice(0, 30) : [];
+  const selectedSpace = lot ? lotDetail(plan.id, lot[0]) : undefined;
   const municipalSelected = !!lot && isGamlpLot(plan.id, lot[0]);
   const municipalHere = plan.id === GAMLP.planId;
   const destination = points.find((p) => p.id === requestedStand?.id);
@@ -159,6 +189,7 @@ export default function CampusMap() {
       {
         plan: id,
         view: mode,
+        ...(photographicReference ? { reference: PHOTO_PLAN_REVISION } : {}),
         ...(curatedSector && id === GAMLP.planId ? { sector: GAMLP.id } : {}),
       },
       { replace: true },
@@ -190,6 +221,7 @@ export default function CampusMap() {
         view: mode,
         lot: String(value[0]),
         detail: '1',
+        ...(photographicReference ? { reference: PHOTO_PLAN_REVISION } : {}),
         ...(municipal ? { sector: GAMLP.id } : stand ? { stand: stand.id } : {}),
       },
       { replace: true },
@@ -317,8 +349,13 @@ export default function CampusMap() {
         </div>
         {query && (
           <div className="indoor-results">
-            <small>{results.length + Number(municipalResult)} resultados</small>
-            {municipalResult && (
+            <small>
+              {photographicReference
+                ? findPhotoPlacements(query).length
+                : results.length + Number(municipalResult)}{' '}
+              resultados
+            </small>
+            {!photographicReference && municipalResult && (
               <Link
                 className="municipal-search-result"
                 to={GAMLP.mapUrl}
@@ -332,7 +369,33 @@ export default function CampusMap() {
                 <ChevronRight size={17} />
               </Link>
             )}
-            {results.length ? (
+            {photographicReference ? (
+              photoResults.length ? (
+                photoResults.map((p) => {
+                  const company = photoCompany(p.companyKey)!;
+                  return (
+                    <Link
+                      className="map-exhibitor-search"
+                      key={p.id}
+                      to={placementMapUrl(p) ?? companyProfileUrl(p.companyKey)}
+                      onClick={() => setQuery('')}
+                    >
+                      <CompanyLogo company={company} />
+                      <span>
+                        <strong>{company.name}</strong>
+                        <small>
+                          {p.printedCode} · {plans.find((plan) => plan.id === p.planId)?.name}
+                          {!p.lotCode ? ' · Ubicación por confirmar' : ''}
+                        </small>
+                      </span>
+                      <ChevronRight size={17} />
+                    </Link>
+                  );
+                })
+              ) : (
+                <p>No encontramos esa empresa.</p>
+              )
+            ) : results.length ? (
               results.map((s) => (
                 <button key={s.id} onClick={() => select(s.id)}>
                   <span>
@@ -395,6 +458,7 @@ export default function CampusMap() {
                 showAvatar={!!gps.position || knownPoint?.planId === plan.id}
                 focusSelection={!routing && selectedLot >= 0}
                 municipalSector={municipalHere}
+                showCompanies={photographicReference}
               />
             ) : (
               <Suspense
@@ -406,6 +470,7 @@ export default function CampusMap() {
               >
                 <Scene
                   plan={plan}
+                  showCompanies={photographicReference}
                   dark={dark}
                   aerial={aerial}
                   position={position}
@@ -418,7 +483,9 @@ export default function CampusMap() {
                   lotColors={
                     municipalHere
                       ? PLAN_LOTS[plan.id].map(([code]) =>
-                          isGamlpLot(plan.id, code) ? '#b2aa3d' : plan.color,
+                          isGamlpLot(plan.id, code)
+                            ? '#b2aa3d'
+                            : (lotDetail(plan.id, code)?.color ?? plan.color),
                         )
                       : undefined
                   }
@@ -583,7 +650,7 @@ export default function CampusMap() {
           Vista 2D activada: no se pudo iniciar el 3D.
         </p>
       )}
-      {curatedSector &&
+      {(curatedSector || photographicReference) &&
         LIVE &&
         !live.map?.floors.some(
           (floor) =>
@@ -635,7 +702,14 @@ export default function CampusMap() {
       )}
       {sheetOpen && (
         <BottomSheet
-          title={municipalSelected ? 'Sector GAMLP' : selectedStand?.name || 'Espacio ' + lot![0]}
+          title={
+            municipalSelected
+              ? 'Sector GAMLP'
+              : (occupants.length === 1 ? occupants[0].name : undefined) ||
+                selectedStand?.name ||
+                selectedSpace?.label ||
+                'Espacio ' + lotLabel(plan.id, lot![0])
+          }
           onClose={closeSheet}
         >
           {municipalSelected ? (
@@ -681,10 +755,20 @@ export default function CampusMap() {
                   </span>
                 )}
                 <span>
-                  <strong>{selectedStand?.boothCode || 'Espacio ' + lot![0]}</strong>
-                  <small>{selectedStand ? plan.name : 'Expositor por publicar'}</small>
+                  <strong>
+                    {selectedStand?.boothCode || 'Espacio ' + lotLabel(plan.id, lot![0])}
+                  </strong>
+                  <small>
+                    {selectedStand || occupants.length
+                      ? plan.name
+                      : selectedSpace?.label
+                        ? plan.name
+                        : 'Expositor por publicar'}
+                  </small>
                 </span>
               </div>
+              {selectedSpace?.note && <p className="footnote">{selectedSpace.note}</p>}
+              {!!occupants.length && <CompanyRows companies={occupants} />}
               {selectedStand && (
                 <div className="sheet-actions">
                   <Link className="button" to={'/stands/' + selectedStand.id} onClick={closeSheet}>
@@ -738,6 +822,20 @@ export default function CampusMap() {
       )}
       {listing && (
         <Modal title="Stands" onClose={() => setListing(false)}>
+          {photographicReference && (
+            <>
+              <p className="map-photo-source">Guía fotografiada · 04 nov 2026</p>
+              <CompanyRows
+                companies={PHOTO_COMPANIES.filter((company) =>
+                  company.placements.some((p) => p.planId === plan.id),
+                ).slice(0, 16)}
+              />
+              <Link className="map-directory-link" to="/companies">
+                Ver directorio completo
+                <ChevronRight size={16} />
+              </Link>
+            </>
+          )}
           <div className="indoor-stand-list">
             {stands.map((s) => (
               <button key={s.id} onClick={() => select(s.id)}>
@@ -769,6 +867,10 @@ export default function CampusMap() {
             El recinto general es un esquema basado en la fotografía oficial; no está
             georreferenciado. Los recorridos orientan entre accesos y pasillos, sin representar una
             posición GPS exacta.
+          </p>
+          <p>
+            Los planos interiores se cotejaron con las fotos del 04/11/2026: numeración, divisiones,
+            sectores y formas. Son una transcripción visual, sin escala métrica validada.
           </p>
           <button className="button secondary" onClick={() => setHelp(false)}>
             Entendido
