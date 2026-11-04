@@ -5,6 +5,7 @@ import { standAtLot, standAtLotIn, type PlanPosition } from './model';
 import type { Stand } from '@/types/domain';
 import type { CampusCamera } from './IndoorScene';
 import { ServiceMark } from './ServiceMark';
+import { GAMLP, isGamlpLot } from '@/features/sectors/gamlp';
 function Controls({
   cameraRef,
   host,
@@ -32,7 +33,13 @@ function Controls({
     if (!focusSelection || selectedLot === null) return;
     let frame = 0;
     const focus = () => {
-      const target = host.current?.querySelector<SVGGElement>(`[data-lot-index="${selectedLot}"]`);
+      const selected = host.current?.querySelector<SVGGElement>(
+        `[data-lot-index="${selectedLot}"]`,
+      );
+      const target =
+        selected?.dataset.sector === 'gamlp'
+          ? host.current?.querySelector<SVGGElement>('[data-sector-focus="gamlp"]')
+          : selected;
       const wrapper = c.instance.wrapperComponent;
       if (!target || !wrapper) return;
       const box = target.getBoundingClientRect(),
@@ -76,6 +83,7 @@ export default function IndoorPlan({
   lotStands,
   lotRotations,
   backgroundSvgUrl,
+  municipalSector = false,
 }: {
   plan: PlanGeometry;
   position: PlanPosition;
@@ -90,6 +98,7 @@ export default function IndoorPlan({
   lotStands?: readonly (Stand | undefined)[];
   lotRotations?: number[];
   backgroundSvgUrl?: string;
+  municipalSector?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   return (
@@ -147,6 +156,9 @@ export default function IndoorPlan({
               </g>
             ))}
             {lots.map(([code, x, y, w, h], index) => {
+              const municipal = municipalSector && isGamlpLot(plan.id, code);
+              const selectedSector =
+                municipal && selectedLot !== null && isGamlpLot(plan.id, lots[selectedLot]?.[0]);
               const stand = lotStands
                 ? lotStands[index]
                 : stands
@@ -157,6 +169,8 @@ export default function IndoorPlan({
                   key={index}
                   data-lot={String(code)}
                   data-lot-index={index}
+                  data-sector={municipal ? 'gamlp' : undefined}
+                  data-sector-selected={municipal ? String(selectedSector) : undefined}
                   transform={
                     lotRotations?.[index]
                       ? `rotate(${lotRotations[index]} ${x + w / 2} ${y + h / 2})`
@@ -165,7 +179,11 @@ export default function IndoorPlan({
                   role="button"
                   tabIndex={0}
                   aria-label={
-                    stand ? `Ver ${stand.name}, stand ${stand.boothCode}` : `Espacio ${code}`
+                    municipal
+                      ? `Ver sector GAMLP, espacio ${code}`
+                      : stand
+                        ? `Ver ${stand.name}, stand ${stand.boothCode}`
+                        : `Espacio ${code}`
                   }
                   onClick={() => onSelectLot(index)}
                   onKeyDown={(e) => {
@@ -181,27 +199,56 @@ export default function IndoorPlan({
                     width={w}
                     height={h}
                     fill={
-                      selectedLot === index
-                        ? '#087ec2'
-                        : stand
-                          ? plan.color
-                          : `color-mix(in srgb, ${plan.color} 14%, var(--surface))`
+                      municipal
+                        ? selectedSector
+                          ? '#d5f24a'
+                          : '#ece8b3'
+                        : selectedLot === index
+                          ? '#087ec2'
+                          : stand
+                            ? plan.color
+                            : `color-mix(in srgb, ${plan.color} 14%, var(--surface))`
                     }
-                    stroke={selectedLot === index ? '#087ec2' : plan.color}
-                    strokeWidth={selectedLot === index ? 4 : 1.3}
+                    stroke={municipal ? '#656219' : selectedLot === index ? '#087ec2' : plan.color}
+                    strokeWidth={municipal || selectedLot === index ? 4 : 1.3}
                   />
                   <text
                     x={x + w / 2}
-                    y={y + h / 2 + 5}
+                    y={municipal && code === 'P14-A' ? y + 27 : y + h / 2 + 5}
                     textAnchor="middle"
                     fontSize={w < 35 ? 12 : 16}
-                    fill={stand || selectedLot === index ? 'white' : 'var(--ink)'}
+                    fill={
+                      municipal
+                        ? '#132d46'
+                        : stand || selectedLot === index
+                          ? 'white'
+                          : 'var(--ink)'
+                    }
                   >
                     {code}
                   </text>
                 </g>
               );
             })}
+            {municipalSector && (
+              <g data-sector-focus="gamlp" pointerEvents="none" aria-hidden="true">
+                <rect x="950" y="271" width="143" height="285" fill="none" />
+                <image href={GAMLP.logo} x="973" y="315" width="96" height="96" />
+                <text
+                  x="1021"
+                  y="440"
+                  textAnchor="middle"
+                  fontSize="23"
+                  fontWeight="700"
+                  fill="#132d46"
+                >
+                  GAMLP
+                </text>
+                <text x="1021" y="465" textAnchor="middle" fontSize="12" fill="#132d46">
+                  Emprendedores
+                </text>
+              </g>
+            )}
             {route && route.length > 1 && (
               <>
                 <polyline
