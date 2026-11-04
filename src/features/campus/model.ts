@@ -1,7 +1,13 @@
 import { STANDS } from '@/data/demo-data';
 import { extractStandIds, validateNfcEvent } from '@/services/nfc-payload';
 import { EVENT_ID } from '@/services/config';
-import { PLAN_GEOMETRY, PLAN_LOTS, type PlanGeometry } from '@/data/map-plans';
+import {
+  PLAN_GEOMETRY,
+  PLAN_LOTS,
+  lotContains,
+  lotDetail,
+  type PlanGeometry,
+} from '@/data/map-plans';
 import type { Stand } from '@/types/domain';
 
 export type CampusStand = Stand & { lotCode?: string | number | null };
@@ -14,12 +20,7 @@ export function lotAtPublishedPosition(plan: PlanGeometry, x: number, y: number)
   const [minX, minY, width, height] = plan.viewBox.split(' ').map(Number);
   const px = minX + x * width;
   const py = minY + y * height;
-  return (
-    PLAN_LOTS[plan.id].find(
-      ([, left, top, lotWidth, lotHeight]) =>
-        px >= left && px <= left + lotWidth && py >= top && py <= top + lotHeight,
-    )?.[0] ?? null
-  );
+  return PLAN_LOTS[plan.id].find((lot) => lotContains(plan.id, lot, px, py))?.[0] ?? null;
 }
 export const pointsForStands = (stands: readonly CampusStand[]) =>
   stands.flatMap((stand) => {
@@ -27,16 +28,34 @@ export const pointsForStands = (stands: readonly CampusStand[]) =>
     if (code === null) return [];
     const lot = PLAN_LOTS[stand.planId]?.find(([value]) => String(value) === String(code));
     if (!lot) return [];
+    const label = lotDetail(stand.planId, lot[0])?.labelAt;
     return [
       {
         id: stand.id,
         planId: stand.planId,
-        x: lot[1] + lot[3] / 2,
-        y: lot[2] + lot[4] / 2,
+        x: label?.[0] ?? lot[1] + lot[3] / 2,
+        y: label?.[1] ?? lot[2] + lot[4] / 2,
         color: PLAN_GEOMETRY.find((p) => p.id === stand.planId)!.color,
       },
     ];
   });
+/** Retired green sublots must not become an asserted occupant of V5 or CDT. */
+export function publishedLotCode(
+  plan: PlanGeometry,
+  stand: { x: number; y: number; boothCode: string },
+) {
+  const code = lotAtPublishedPosition(plan, stand.x, stand.y);
+  if (
+    plan.id === 'green-upper' &&
+    (code === 'V5' || code === 'CDT') &&
+    !stand.boothCode
+      .replace(/[^a-z0-9]/gi, '')
+      .toUpperCase()
+      .endsWith(code)
+  )
+    return null;
+  return code;
+}
 export const CAMPUS_POINTS = pointsForStands(STANDS);
 export type CampusPoint = (typeof CAMPUS_POINTS)[number];
 export type PlanPosition = { x: number; y: number };

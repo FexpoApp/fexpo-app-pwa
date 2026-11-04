@@ -1,4 +1,4 @@
-import { PLAN_LOTS, type PlanGeometry } from '@/data/map-plans';
+import { PLAN_LOTS, lotContains, type PlanGeometry } from '@/data/map-plans';
 import type { PlanPosition } from './model';
 
 // Orthogonal grid constrained to the published outline and booth-free aisles.
@@ -48,7 +48,7 @@ function grid(plan: PlanGeometry) {
     rows = Math.ceil(h / step);
   const outline = polygon(plan.outline);
   const obstacles = plan.structures
-    .filter((s) => /baños|mesas/i.test(s.label ?? ''))
+    .filter((s) => !s.label || /baños|mesas|selfies|enfermer/i.test(s.label))
     .map((s) => polygon(s.path));
   const lots = PLAN_LOTS[plan.id] ?? [];
   const nodes: PlanPosition[] = [],
@@ -60,10 +60,7 @@ function grid(plan: PlanGeometry) {
       nodes.push(p);
       free[index] = Number(
         inside(p, outline) &&
-          !lots.some(
-            ([, bx, by, bw, bh]) =>
-              p.x >= bx - 2 && p.x <= bx + bw + 2 && p.y >= by - 2 && p.y <= by + bh + 2,
-          ) &&
+          !lots.some((lot) => lotContains(plan.id, lot, p.x, p.y, 2)) &&
           !obstacles.some((shape) => inside(p, shape)),
       );
     }
