@@ -1,5 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
+import { sectorFlow } from './sector-flow';
+sectorFlow(async (page) => {
+  const checkins = await setup(page);
+  // The presentation must not create a real check-in, even with an active session.
+  return () => expect(checkins).toHaveLength(0);
+});
 const eventId = 'e0000000-0000-4000-8000-000000000001';
 const standId = '5a000000-0000-4000-8000-000000000001';
 const secondId = '5a000000-0000-4000-8000-000000000002';
@@ -873,10 +879,9 @@ test('agenda live usa actividades publicadas, hora de La Paz y no anuncia ejempl
     page.getByRole('heading', { name: 'Presentación publicada por el organizador' }),
   ).toHaveCount(0);
   await page.goto('/');
-  await expect(page.locator('.advertisement')).toHaveCount(0);
-  await expect(
-    page.getByText('Los anuncios aparecerán aquí cuando estén publicados.'),
-  ).toBeVisible();
+  await expect(page.locator('.advertisement')).toHaveCount(1);
+  await expect(page.locator('.poster-municipal')).toContainText('Sector municipal');
+  await expect(page.getByText('Ejemplo · Publicidad', { exact: true })).toHaveCount(0);
 });
 
 test('agenda caída permite reintentar sin presentar una cartelera ficticia', async ({ page }) => {

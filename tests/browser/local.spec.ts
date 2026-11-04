@@ -1,5 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
+import { sectorFlow } from './sector-flow';
+sectorFlow(async (page) => {
+  await setup(page);
+  await page.goto('/');
+  await enterTrial(page);
+});
 async function setup(page: Page) {
   const apiCalls: string[] = [];
   page.on('request', (request) => {

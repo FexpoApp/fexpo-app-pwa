@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { sectorFlow } from './sector-flow';
+sectorFlow();
 
 test('la PWA instalada abre afiches y PDF como archivos, sin sustituirlos por la aplicación', async ({
   page,
@@ -71,6 +73,8 @@ test('anuncios rotan automáticamente, se pueden pausar y respetan movimiento re
   await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '1');
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.getByRole('button', { name: 'Anuncio siguiente', exact: true }).click();
+  await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '2');
+  await page.getByRole('button', { name: 'Anuncio siguiente', exact: true }).click();
   await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '0');
   await expect(page.getByRole('button', { name: 'Pausar anuncios', exact: true })).toHaveCount(0);
 });
@@ -91,7 +95,9 @@ test('inicio compacto, anuncios independientes y agenda navegable con Descubre y
   ).toBeVisible();
   await page.getByRole('button', { name: 'Anuncio siguiente' }).click();
   await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '1');
-  await page.locator('.advertisement').nth(1).click();
+  await page.getByRole('button', { name: 'Anuncio siguiente' }).click();
+  await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '2');
+  await page.locator('.advertisement[href="/stands/stand-sabor-andino"]').click();
   await expect(page).toHaveURL(/\/stands\/stand-sabor-andino$/);
   await page.goto('/');
   await page
@@ -137,6 +143,9 @@ for (const theme of ['light', 'dark'])
         '/notifications',
         '/stands/stand-altura-labs',
         '/events/event-fipaz-2026',
+        '/map?plan=yellow-upper&sector=gamlp&lot=P14-A',
+        '/sectors/gamlp?demo=1',
+        '/sectors/gamlp?demo=1&tab=visit',
       ]) {
         await page.goto(route);
         await expect(page.locator('main')).toBeVisible();
