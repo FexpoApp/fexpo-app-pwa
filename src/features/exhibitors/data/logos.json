@@ -1,0 +1,183 @@
+[
+  {
+    "companyKey": "ferrotodo",
+    "sourcePage": "https://www.ferrotodo.com/",
+    "imageUrl": "https://www.ferrotodo.com/wp-content/uploads/2024/10/FERROTODO-LOGO.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/ferrotodo.png"
+  },
+  {
+    "companyKey": "entel",
+    "sourcePage": "https://www.entel.bo/Inicio",
+    "imageUrl": "https://www.entel.bo/activos/assets/images/nuevos_iconos/logo_new.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/entel.png"
+  },
+  {
+    "companyKey": "mi-teleferico",
+    "sourcePage": "https://www.miteleferico.bo/registrate/",
+    "imageUrl": "https://www.miteleferico.bo/favicon.ico",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "brand-icon",
+    "src": "/brands/exhibitors/mi-teleferico.png"
+  },
+  {
+    "companyKey": "quantum-motors",
+    "sourcePage": "https://tuquantum.com/acerca-de-nosotros/empresa/",
+    "imageUrl": "https://tuquantum.com/wp-content/uploads/2022/01/logo.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/quantum-motors.png",
+    "background": "dark"
+  },
+  {
+    "companyKey": "bago",
+    "sourcePage": "https://www.bago.com.bo/",
+    "imageUrl": "https://www.bago.com.bo/wp-content/uploads/2026/05/Logo-Bago-Blanco-1024x402.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/bago.png",
+    "background": "dark"
+  },
+  {
+    "companyKey": "bancosol",
+    "sourcePage": "https://www.bancosol.com.bo/",
+    "imageUrl": "https://cdn.modyo.cloud/uploads/58dd57da-031f-42e8-ba3c-c5d78bffc7fb/original/logo_bancosol.svg",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/bancosol.svg"
+  },
+  {
+    "companyKey": "sofia",
+    "sourcePage": "https://sofia.com.bo/",
+    "imageUrl": "https://sofia.com.bo/cdn/shop/files/LOGO_sofia_50_anos_ROJO.png?v=1788380597&width=600",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/sofia.png"
+  },
+  {
+    "companyKey": "pio-rico",
+    "sourcePage": "https://piorico.com/nosotros/",
+    "imageUrl": "https://piorico.com/wp-content/uploads/2026/03/logo-piorico.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/pio-rico.png"
+  },
+  {
+    "companyKey": "ind-venado-s-a",
+    "sourcePage": "https://grupovenado.com/",
+    "imageUrl": "https://grupovenado.com/wp-content/uploads/2020/06/Isologo-Venado-Sin-Texto.svg",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/ind-venado-s-a.svg",
+    "background": "dark"
+  },
+  {
+    "companyKey": "cemse",
+    "sourcePage": "https://cemse.edu.bo/",
+    "imageUrl": "https://cemse.edu.bo/wp-content/uploads/2020/09/logo_blanco_peque.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/cemse.png",
+    "background": "dark"
+  },
+  {
+    "companyKey": "sos-infantiles",
+    "sourcePage": "https://www.aldeasinfantiles.org.bo/conocenos/aldeas-infantiles-en-bolivia",
+    "imageUrl": "https://www.aldeasinfantiles.org.bo/getmedia/e2e10200-e7ae-4ba1-aebd-3fa1fd812a98/Logotipo_fondocian-(1).jpg?width=216&height=74&ext=.jpg",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/sos-infantiles.jpg"
+  },
+  {
+    "companyKey": "upea-posgrado",
+    "sourcePage": "https://programas.posgradoupea.edu.bo/",
+    "imageUrl": "https://programas.posgradoupea.edu.bo/assets/logos/logo20anios.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/upea-posgrado.png"
+  },
+  {
+    "companyKey": "rtp",
+    "sourcePage": "https://rtpbolivia.com.bo/",
+    "imageUrl": "https://rtpbolivia.com.bo/wp-content/uploads/elementor/thumbs/Logo800-rpf3ygy9465kj8bdo7lu0n9h17ymy5x4rvricgh552.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/rtp.png",
+    "background": "dark"
+  },
+  {
+    "companyKey": "gobernacion-de-la-paz",
+    "sourcePage": "https://www.lapaz.gob.bo/institucional",
+    "imageUrl": "https://www.lapaz.gob.bo/gobico.ico",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "brand-icon",
+    "src": "/brands/exhibitors/gobernacion-de-la-paz.png"
+  },
+  {
+    "companyKey": "casio",
+    "sourcePage": "https://www.casio.com/select-country-region/",
+    "imageUrl": "https://www.casio.com/etc.clientlibs/casio/clientlibs/clientlib-resources/casio/resources/apple-touch-icon-180x180.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "brand-icon",
+    "src": "/brands/exhibitors/casio.png"
+  },
+  {
+    "companyKey": "wella",
+    "sourcePage": "https://www.wellacompany.com/our-brands",
+    "imageUrl": "https://www.wellacompany.com/sites/default/files/styles/brands_logotype/public/media/images/logo_wellapro.png.webp?itok=fdytuDqP",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/wella.webp"
+  },
+  {
+    "companyKey": "muebles-silvera",
+    "sourcePage": "https://silvera.com.bo/",
+    "imageUrl": "https://i0.wp.com/silvera.com.bo/wp-content/uploads/2023/06/cropped-708-290-01.png?fit=1235%2C297&ssl=1",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/muebles-silvera.png"
+  },
+  {
+    "companyKey": "master-detector",
+    "sourcePage": "https://masterdetector.com.bo/",
+    "imageUrl": "https://masterdetector.com.bo/cdn/shop/files/logo.png?v=1628004657&width=220",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/master-detector.png"
+  },
+  {
+    "companyKey": "thermocontrol",
+    "sourcePage": "https://thermocontrol.com.bo/INICIO.html",
+    "imageUrl": "https://thermocontrol.com.bo/images/logo_cpu.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/thermocontrol.png"
+  },
+  {
+    "companyKey": "kantutani",
+    "sourcePage": "https://www.kantutani.com/",
+    "imageUrl": "https://www.kantutani.com/wp-content/uploads/2024/08/Kantutani-2024.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/kantutani.png"
+  },
+  {
+    "companyKey": "dabalash",
+    "sourcePage": "https://www.dabalash.mx/pages/tienda-dabalash",
+    "imageUrl": "https://www.dabalash.mx/cdn/shop/files/DABALASHLOGO.png?v=1762213729&width=600",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo",
+    "src": "/brands/exhibitors/dabalash.png"
+  },
+  {
+    "companyKey": "gamlp",
+    "src": "/brands/gamlp-2026.png",
+    "sourcePage": "https://lapaz.bo/",
+    "imageUrl": "https://lapaz.bo/wp-content/uploads/2026/06/cropped-logolpz26-1.png",
+    "verifiedAt": "2026-11-04",
+    "assetKind": "logo"
+  }
+]
