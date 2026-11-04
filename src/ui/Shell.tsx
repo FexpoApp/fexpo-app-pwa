@@ -48,6 +48,7 @@ const titles: Record<string, string> = {
   '/my-qr': 'Mi código QR',
   '/rewards': 'Premios',
   '/notifications': 'Avisos',
+  '/sectors/gamlp': 'Sector GAMLP',
 };
 interface InstallEvent extends Event {
   prompt(): Promise<void>;

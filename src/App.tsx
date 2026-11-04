@@ -12,6 +12,7 @@ import { LocalEntry } from './pages/Welcome';
 import { DiscoverPage } from './pages/Discover';
 import { NFC_ENABLED } from './services/config';
 import { NfcProbe } from './pages/NfcProbe';
+import { GamlpSectorPage } from './pages/Sector';
 
 export function App() {
   return (
@@ -30,6 +31,7 @@ export function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="stands" element={<StandsPage />} />
           <Route path="stands/:id" element={<StandPage />} />
+          <Route path="sectors/gamlp" element={<GamlpSectorPage />} />
           <Route path="my-qr" element={<QrPage />} />
           <Route path="rewards" element={<RewardsPage />} />
           <Route path="notifications" element={<NotificationsPage />} />
