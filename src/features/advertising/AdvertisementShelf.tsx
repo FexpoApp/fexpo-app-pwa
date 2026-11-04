@@ -3,11 +3,32 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Megaphone, Pause, Play } from 
 import { Link } from 'react-router-dom';
 import { LIVE, EVENT_ID } from '@/services/config';
 import { activeAdvertisements, DEMO_ADVERTISEMENTS, PUBLISHED_ADVERTISEMENTS } from './model';
+import type { Advertisement } from './model';
+import { GAMLP } from '@/features/sectors/gamlp';
+import '@/features/sectors/sector.css';
 
 export function AdvertisementShelf() {
-  const ads = LIVE
+  const campaigns = LIVE
     ? activeAdvertisements(PUBLISHED_ADVERTISEMENTS, EVENT_ID, Date.now())
     : DEMO_ADVERTISEMENTS;
+  // Institutional directory feature requested for the presentation. It is not
+  // inferred to be a paid campaign and has no fabricated stand UUID or metrics.
+  const municipal: Advertisement = {
+    id: 'gamlp-sector',
+    eventId: EVENT_ID,
+    standId: '',
+    advertiser: 'Gobierno Autónomo Municipal de La Paz',
+    title: 'Conoce a quienes emprenden en La Paz.',
+    subtitle: 'Bloque amarillo · Planta alta · P14-A y P14-B',
+    category: 'municipal',
+    destination: GAMLP.mapUrl,
+    institutional: true,
+    status: 'published',
+    startsAt: '2026-10-28T00:00:00-04:00',
+    endsAt: '2026-11-09T00:00:00-04:00',
+    example: false,
+  };
+  const ads = [...activeAdvertisements([municipal], EVENT_ID, Date.now()), ...campaigns];
   const [active, setActive] = useState(0);
   const rail = useRef<HTMLDivElement>(null);
   const [paused, setPaused] = useState(false);
@@ -128,21 +149,32 @@ export function AdvertisementShelf() {
             <Link
               key={ad.id}
               className={`advertisement poster-${ad.category}`}
-              to={`/stands/${ad.standId}`}
+              to={ad.destination || `/stands/${ad.standId}`}
             >
               <span className="advertisement-art" aria-hidden="true">
-                <span className="category-poster-image" />
+                {ad.institutional ? (
+                  <span className="municipal-ad-art">
+                    <img src={GAMLP.logo} alt="" />
+                    <span>GAMLP</span>
+                  </span>
+                ) : (
+                  <span className="category-poster-image" />
+                )}
               </span>
               <span className="advertisement-shade" aria-hidden="true" />
               <span className="advertisement-copy">
                 <small className="advertisement-disclosure">
-                  {ad.example ? 'Ejemplo · Publicidad' : 'Publicidad'}
+                  {ad.institutional
+                    ? 'Sector municipal'
+                    : ad.example
+                      ? 'Ejemplo · Publicidad'
+                      : 'Publicidad'}
                 </small>
                 <span className="advertisement-advertiser">{ad.advertiser}</span>
                 <strong>{ad.title}</strong>
                 <span className="advertisement-description">{ad.subtitle}</span>
                 <span className="advertisement-cta">
-                  Conocer el stand
+                  {ad.institutional ? 'Ubicar el sector' : 'Conocer el stand'}
                   <ArrowUpRight size={17} />
                 </span>
               </span>
