@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
           shortcuts: [
-            { name: 'Explorar el mapa', url: '/map' },
+            { name: 'Explorar el mapa', url: '/map?reference=2026-11-04' },
             { name: 'Mi código QR', url: '/my-qr' },
           ],
         },
@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => {
           dontCacheBustURLsMatching: /^assets\/.*-[\w-]{8}\.(?:js|css)$/,
           navigateFallback: '/index.html',
           // Links to posters/PDFs must open the asset, including in an installed PWA.
-          navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/(?:assets|fonts|icons)\//],
+          navigateFallbackDenylist: [/^\/api(?:\/|$)/, /^\/(?:assets|fonts|icons|brands)\//],
           cleanupOutdatedCaches: true,
         },
         devOptions: { enabled: false },

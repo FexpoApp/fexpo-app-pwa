@@ -13,6 +13,7 @@ import { DiscoverPage } from './pages/Discover';
 import { NFC_ENABLED } from './services/config';
 import { NfcProbe } from './pages/NfcProbe';
 import { GamlpSectorPage } from './pages/Sector';
+import { PhotoCompaniesPage, PhotoCompanyPage } from './pages/Companies';
 
 export function App() {
   return (
@@ -31,6 +32,8 @@ export function App() {
           <Route path="profile" element={<ProfilePage />} />
           <Route path="stands" element={<StandsPage />} />
           <Route path="stands/:id" element={<StandPage />} />
+          <Route path="companies" element={<PhotoCompaniesPage />} />
+          <Route path="companies/:id" element={<PhotoCompanyPage />} />
           <Route path="sectors/gamlp" element={<GamlpSectorPage />} />
           <Route path="my-qr" element={<QrPage />} />
           <Route path="rewards" element={<RewardsPage />} />

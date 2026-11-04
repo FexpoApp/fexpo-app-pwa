@@ -27,6 +27,9 @@ export function StandsPage() {
     : (CATEGORIES.find((c) => c.id === category)?.label ?? 'Todos los stands');
   return (
     <div className="stack stand-catalog">
+      <Link className="map-directory-link" to="/companies">
+        Directorio de la feria · nombres y ubicaciones
+      </Link>
       <label className="catalog-search">
         <Search size={19} />
         <input

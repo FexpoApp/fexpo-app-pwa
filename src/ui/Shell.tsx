@@ -45,6 +45,7 @@ const titles: Record<string, string> = {
   '/discover': 'Descubre',
   '/profile': 'Perfil',
   '/stands': 'Stands',
+  '/companies': 'Directorio de la feria',
   '/my-qr': 'Mi código QR',
   '/rewards': 'Premios',
   '/notifications': 'Avisos',
@@ -111,13 +112,15 @@ export function Shell() {
   }, [pathname]);
   const title =
     titles[pathname] ??
-    (pathname.startsWith('/stands/')
-      ? 'Perfil del stand'
-      : pathname.startsWith('/events/')
-        ? pathname === '/events/event-fipaz-2026'
-          ? 'Agenda FIPAZ'
-          : 'La feria'
-        : 'Fexpo');
+    (pathname.startsWith('/companies/')
+      ? 'Perfil del expositor'
+      : pathname.startsWith('/stands/')
+        ? 'Perfil del stand'
+        : pathname.startsWith('/events/')
+          ? pathname === '/events/event-fipaz-2026'
+            ? 'Agenda FIPAZ'
+            : 'La feria'
+          : 'Fexpo');
   useEffect(() => {
     const sync = () => setOnline(navigator.onLine);
     const available = (event: Event) => {
@@ -170,7 +173,11 @@ export function Shell() {
         </div>
         <nav aria-label="Navegación de escritorio">
           {tabs.map((tab) => (
-            <NavLink end={tab.path === '/'} to={tab.path} key={tab.path}>
+            <NavLink
+              end={tab.path === '/'}
+              to={tab.path === '/map' ? '/map?reference=2026-11-04' : tab.path}
+              key={tab.path}
+            >
               <tab.icon size={20} />
               {tab.label}
               <ArrowUpRight size={15} />
@@ -268,7 +275,7 @@ export function Shell() {
           {tabs.map((tab) => (
             <NavLink
               end={tab.path === '/'}
-              to={tab.path}
+              to={tab.path === '/map' ? '/map?reference=2026-11-04' : tab.path}
               className={({ isActive }) =>
                 `nav-item ${tab.path === '/scan' ? 'scan-nav' : ''} ${isActive ? 'active' : ''}`
               }

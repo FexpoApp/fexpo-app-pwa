@@ -9,7 +9,7 @@ import { FairIdentity } from '@/features/fair/FairIdentity';
 import { AdvertisementShelf } from '@/features/advertising/AdvertisementShelf';
 
 const actions = [
-  { path: '/map', name: 'Mapa', art: 'map', tint: 'blue' },
+  { path: '/map?reference=2026-11-04', name: 'Mapa', art: 'map', tint: 'blue' },
   { path: '/stands', name: 'Stands', art: 'stands', tint: 'coral' },
   { path: '/scan', name: 'Check-in', art: 'my-qr', tint: 'green' },
 ];
