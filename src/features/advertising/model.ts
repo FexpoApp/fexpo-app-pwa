@@ -5,7 +5,9 @@ export interface Advertisement {
   advertiser: string;
   title: string;
   subtitle: string;
-  category: 'technology' | 'gastronomy';
+  category: 'technology' | 'gastronomy' | 'municipal';
+  destination?: string;
+  institutional?: boolean;
   status: 'draft' | 'published';
   startsAt: string;
   endsAt: string;
