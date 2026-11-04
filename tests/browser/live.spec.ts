@@ -1,6 +1,16 @@
+import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
 import { sectorFlow } from './sector-flow';
+import { photoPlanFlow } from './photo-plan-flow';
+photoPlanFlow(async (page) => {
+  const requests = await setup(page);
+  return () => expect(requests).toHaveLength(0);
+});
+exhibitorFlow(async (page) => {
+  const requests = await setup(page);
+  return () => expect(requests).toHaveLength(0);
+});
 sectorFlow(async (page) => {
   const checkins = await setup(page);
   // The presentation must not create a real check-in, even with an active session.
@@ -658,13 +668,13 @@ test('el mapa publicado ofrece el visor 3D y conserva la vista 2D y la ficha rea
   );
   await page.getByRole('button', { name: '3D', exact: true }).click();
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', plan.id);
-  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '51');
+  await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-lot-count', '55');
   await expect(page.getByRole('button', { name: 'Girar mapa' })).toBeVisible();
   await expect(page.getByRole('button', { name: /Ver Café Altiplano, stand A-01/ })).toBeVisible();
   await expect(page.getByText('Altura Labs', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '2D', exact: true }).click();
   await expect(page.getByLabel('Plano de Internacional I')).toBeVisible();
-  await expect(page.locator('.indoor-svg [data-lot]')).toHaveCount(51);
+  await expect(page.locator('.indoor-svg [data-lot]')).toHaveCount(55);
   await page.getByRole('button', { name: '3D', exact: true }).click();
   await page.goto(`/map?stand=${standId}&view=3d`);
   await expect(page.locator('.indoor-selection')).toHaveCount(0);

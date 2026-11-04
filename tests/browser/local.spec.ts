@@ -1,6 +1,18 @@
+import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
 import { sectorFlow } from './sector-flow';
+import { photoPlanFlow } from './photo-plan-flow';
+photoPlanFlow(async (page) => {
+  await setup(page);
+  await page.goto('/');
+  await enterTrial(page);
+});
+exhibitorFlow(async (page) => {
+  await setup(page);
+  await page.goto('/');
+  await enterTrial(page);
+});
 sectorFlow(async (page) => {
   await setup(page);
   await page.goto('/');

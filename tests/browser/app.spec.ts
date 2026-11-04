@@ -1,6 +1,10 @@
+import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect } from '@playwright/test';
 import { sectorFlow } from './sector-flow';
+import { photoPlanFlow } from './photo-plan-flow';
 sectorFlow();
+photoPlanFlow();
+exhibitorFlow();
 
 test('la PWA instalada abre afiches y PDF como archivos, sin sustituirlos por la aplicación', async ({
   page,
@@ -291,4 +295,32 @@ test('avisos y recompensas demo se pueden consultar y reiniciar', async ({ page 
   await page.getByRole('button', { name: 'Reiniciar recorrido demo' }).click();
   await page.getByRole('button', { name: 'Reiniciar demo' }).click();
   await expect(page.getByText('Tu primera parada te espera')).toBeVisible();
+});
+
+test('directorio y logo verificado siguen disponibles sin red tras actualizar la PWA', async ({
+  page,
+  context,
+}) => {
+  await page.goto('/companies/ind-venado-s-a');
+  await page.evaluate(async () => {
+    await navigator.serviceWorker.ready;
+  });
+  await page.reload();
+  await expect.poll(() => page.evaluate(() => !!navigator.serviceWorker.controller)).toBe(true);
+  await context.setOffline(true);
+  try {
+    await page.goto('/companies/ind-venado-s-a');
+    const logo = page.getByRole('img', { name: 'Logo de Ind. Venado S.A.' });
+    await expect(logo).toBeVisible();
+    await expect(page.locator('.exhibitor-identity .exhibitor-logo')).toHaveClass(/logo-on-dark/);
+    expect(
+      await logo.evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
+    ).toBe(true);
+    await page.goto('/map?reference=2026-11-04&plan=yellow-upper');
+    await expect(
+      page.locator('[data-lot="117"] [data-company-logo="ferrotodo"] image'),
+    ).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
 });
