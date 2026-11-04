@@ -33,6 +33,7 @@ export function sectorFlow(prepare: (page: Page) => Promise<void | (() => void)>
       'aria-selected',
       'true',
     );
+    await expect(page.getByRole('tab', { name: 'Visita QR', exact: true })).toBeFocused();
     const points = await page.locator('.app-header .points-pill').textContent();
     await expect(page.locator('.sector-qr svg')).toHaveCount(1);
     await page.getByRole('button', { name: 'Simular lectura del personal' }).click();
@@ -53,6 +54,28 @@ export function sectorFlow(prepare: (page: Page) => Promise<void | (() => void)>
     await expect(page.getByRole('link', { name: 'Mostrar mi QR', exact: true })).toHaveAttribute(
       'href',
       '/scan?sector=gamlp',
+    );
+    assertNoWrites?.();
+  });
+
+  test('GAMLP: cerrar el perfil no roba el foco a la pestaña elegida', async ({ page }) => {
+    const assertNoWrites = await prepare(page);
+    await page.goto('/sectors/gamlp?demo=1');
+    await page.getByRole('button', { name: /Ejemplo · Artesanía/ }).click();
+    await expect(page.getByRole('dialog', { name: 'Ejemplo · Artesanía' })).toBeVisible();
+    // A native close event is queued. A visitor may focus another control before
+    // React unmounts the dialog; that later cleanup must respect the new target.
+    await page.evaluate(() => {
+      document.querySelector<HTMLDialogElement>('.sector-mini-profile')!.close();
+      document.getElementById('entrepreneurs-tab')!.focus();
+    });
+    await expect(page.locator('.sector-mini-profile')).toHaveCount(0);
+    const tab = page.getByRole('tab', { name: 'Emprendedores', exact: true });
+    await expect(tab).toBeFocused();
+    await tab.press('ArrowRight');
+    await expect(page.getByRole('tab', { name: 'Visita QR', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
     );
     assertNoWrites?.();
   });

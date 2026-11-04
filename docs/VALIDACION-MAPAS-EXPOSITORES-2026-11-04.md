@@ -26,3 +26,11 @@ Los recorridos conectados usan una API simulada y no acreditan visitas reales. Q
 Vite informa del tamaño de los chunks principales y Three.js; los builds terminan correctamente. La geometría sigue siendo una transcripción visual sin escala métrica ni GPS absoluto validados. La guía de expositores y las fuentes de logos no sustituyen la validación operativa de la organización.
 
 Pasos de integración y aceptación: [backend y base de datos](INTEGRACION-EXPOSITORES-2026-11-04.md).
+
+## Corrección de foco detectada en CI
+
+El primer push de los 15 commits pasó unitarias y la suite demo de GitHub. Local y live detectaron una carrera de foco al cerrar un mini perfil GAMLP con Escape y cambiar enseguida a la pestaña QR. El cierre nativo ya había devuelto el foco; la limpieza posterior del modal volvía a enfocarlo aunque el visitante hubiera elegido otro control.
+
+La corrección respeta el nuevo destino de foco y conserva la restauración cuando aún está dentro de la ventana o en el cuerpo del documento. La regresión se reproduce mediante cierre nativo y selección inmediata de otra pestaña, sin esperas artificiales. Se verifica también el foco de la pestaña elegida al navegar con flechas. Los tres recorridos GAMLP pasaron tres repeticiones tanto en live (9/9) como en local (9/9). La corrección se añade en un commit posterior para conservar el historial ya publicado.
+
+Producción de la entrega inicial: se comprobó en `https://app.fexpo.lat` la ficha de Ferrotodo con ubicaciones 110/117, sus 134 espacios del amarillo alto y los 22 recursos de marca, todos con HTTP 200 y tipo de imagen; sin errores JavaScript. El estado del commit más reciente se consulta en [GitHub Actions](https://github.com/FexpoApp/fexpo-app-pwa/actions/workflows/pwa-e2e.yml).

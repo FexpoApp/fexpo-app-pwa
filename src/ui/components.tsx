@@ -193,7 +193,13 @@ export function Modal({
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = overflow;
-      if (previous?.isConnected) previous.focus({ preventScroll: true });
+      // Native dialog.close() already restores focus before its queued close event.
+      // Do not steal focus if the visitor has moved to another control meanwhile.
+      if (
+        previous?.isConnected &&
+        (dialog.contains(document.activeElement) || document.activeElement === document.body)
+      )
+        previous.focus({ preventScroll: true });
     };
   }, []);
   return (
