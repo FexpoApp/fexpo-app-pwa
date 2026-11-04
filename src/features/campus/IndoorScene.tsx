@@ -14,6 +14,7 @@ interface Props {
   plan: PlanGeometry;
   lots?: Lot[];
   lotColors?: string[];
+  selectionBounds?: { x: number; y: number; width: number; height: number };
   lotHeights?: number[];
   showLotLabels?: boolean;
   showStructureLabels?: boolean;
@@ -425,7 +426,13 @@ export default function IndoorScene(props: Props) {
         highlight.visible = current.selectedLot !== null;
         const lot = current.selectedLot !== null ? lots[current.selectedLot] : null;
         if (lot) {
-          const [_, x, y, w, h] = lot;
+          const [, lx, ly, lw, lh] = lot;
+          const {
+            x,
+            y,
+            width: w,
+            height: h,
+          } = current.selectionBounds ?? { x: lx, y: ly, width: lw, height: lh };
           const corners = [
             { x, y },
             { x: x + w, y },
