@@ -2,7 +2,9 @@
 
 Aplicación de visitantes en React, Vite y TypeScript. Identidad FEXPO: símbolo de módulos, Poppins, azul, lima y marfil; temas claro y oscuro.
 
-Producción: [app.fexpo.lat](https://app.fexpo.lat). **Esta actualización del 01/11/2026 está local en `codex/inicio-anuncios-agenda-2026` para revisión; no se ha desplegado.** Conserva los cambios previos de la PWA.
+Producción: [app.fexpo.lat](https://app.fexpo.lat). **La entrega GAMLP del 04/11/2026 está en el espacio de trabajo para revisión; aún no se ha publicado.** Conserva las actualizaciones previas de Inicio, Descubre, QR e iconos oficiales.
+
+Demo municipal: [recorrido, fuentes del mapa y pendientes de integración](docs/GAMLP-DEMO-2026-11-04.md). En desarrollo, abrir `/sectors/gamlp?demo=1` o entrar desde el anuncio del GAMLP en Inicio. P14-A y P14-B forman un único sector. La lista real se carga en `GAMLP_ENTREPRENEURS`; los ejemplos y el conteo QR simulado están identificados y separados de los datos reales.
 
 Documentación actual: [Descubre, QR y comparación del mapa oficial](docs/DESCUBRE-QR-Y-MAPA-OFICIAL-2026-11-01.md). Registros anteriores: [Inicio y agenda](docs/INICIO-AGENDA-Y-DESCUBRE-2026-11-01.md), [Descubrimiento y mapa](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md) y [Mejoras móviles](docs/MEJORAS-MOVIL-2026-10-28.md).
 
@@ -21,10 +23,14 @@ Las casillas marcadas describen código de la PWA, no un despliegue ni una certi
 - [x] Visitas por QR personal: GET /me/qr, pase visible desde Check-in y actualización del progreso cada 4 segundos mientras se muestra. Abrir un enlace de stand o mostrar un QR no acredita puntos.
 - [x] NFC en pausa (`NFC_ENABLED = false`): sin botón de lectura; `/nfc-test` redirige a Check-in. Código y pruebas unitarias conservados para una futura feria.
 - [x] Iconos de instalación con isotipo oficial negro sobre lima: PNG 192/512, máscara Android, Apple 180 y favicon. URLs versionadas `fexpo-official-v2-*` para comunicar el cambio a instalaciones existentes.
-- [x] Comparación documentada del PDF oficial, página 3, con las siete zonas y 472 espacios del modelo. No se modificó la geometría ni se afirmó georreferenciación. Servicios ofrece el plano oficial donde falta un punto interactivo validado.
+- [x] Comparación inicial del PDF oficial con las siete zonas y 472 espacios del modelo. El 04/11 se cotejó el amarillo con las fotos actuales y se corrigieron divisiones y rótulos: ahora son 477 polígonos en total. El plano sigue siendo aproximado, sin georreferenciación. Servicios conserva el PDF oficial.
 - [x] Se mantienen sesión, favoritos, contactos con consentimiento, intereses, mapa 2D/3D, ofertas y progreso confirmado por servidor.
 
 ### Pendientes por responsable
+
+- [x] **PWA — GAMLP:** anuncio institucional → mapa amarillo alto → selección conjunta P14-A/P14-B → ficha, directorio y mini perfiles; demostración de un conteo QR único por pase. Correcciones 90A/B y 53A/B/C según las fotos del 04/11. [Detalle y límites](docs/GAMLP-DEMO-2026-11-04.md).
+- [ ] **Omar / GAMLP:** entregar la lista real de emprendedores con productos y datos autorizados. No se publican nombres ficticios como participantes confirmados.
+- [ ] **Backend / BD / dashboard — GAMLP:** asociar ambos lotes a un único sector/stand UUID real y su personal; persistir directorio y visitas, integrar el escáner autorizado y validar el circuito con dos dispositivos. El conteo del demo solo vive en este navegador.
 
 - [ ] **Dashboard / backend — prioridad QR:** adaptar el escáner al contrato real `POST /stands/:standId/manual-check-ins` (`userQrToken`, `requestKey`). Hoy su cliente usa `/stands/scan-visitor`, `visitorQrData` y `occurredAt`; no coincide con ese contrato. Validar sesión, roles y alcance del stand. Esta entrega no modifica el dashboard.
 - [ ] **QA — issue #4:** probar físicamente QR personal leído por staff, duplicados diarios, rechazos, Android/iOS, red intermitente, actualización de saldo, mapa e instalación. NFC queda para otra feria.
@@ -41,16 +47,16 @@ Las casillas marcadas describen código de la PWA, no un despliegue ni una certi
 
 ### Qué se consulta o guarda hoy
 
-| Función               | Fuente o persistencia actual                                                                   | Falta                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Agenda / Hoy          | API de actividades y transcripción local de afiches con fecha/fuente; día en URL               | Publicación editorial única, horarios, retiros/cancelaciones |
-| Anuncios              | Ejemplos locales; fuente live vacía                                                            | API, campañas/creativos en BD y métricas                     |
-| Comer / menús         | Catálogo API en live; menú demo solo local                                                     | Publicación y persistencia de menús reales                   |
-| Visita QR             | Token del backend; el staff confirma; PWA consulta visitas/saldo                               | Adaptar escáner dashboard y probar físicamente el circuito   |
-| NFC histórico         | Código desactivado; cola anterior de IndexedDB conservada                                      | Reactivación y validación en otra feria                      |
-| Contactos comerciales | POST con consentimiento; confirmación tras ID del servidor                                     | Consulta/gestión en panel del expositor                      |
-| Intereses             | localStorage por cuenta/evento                                                                 | Sincronización en servidor                                   |
-| Mapa                  | Geometría publicada o maqueta compatible; último stand confirmado solo como origen orientativo | Cotejo operativo, servicios y lotes fusionados               |
+| Función               | Fuente o persistencia actual                                                                      | Falta                                                        |
+| --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Agenda / Hoy          | API de actividades y transcripción local de afiches con fecha/fuente; día en URL                  | Publicación editorial única, horarios, retiros/cancelaciones |
+| Anuncios              | Ejemplos locales; anuncio institucional GAMLP curado en PWA; campañas pagadas live aún sin fuente | API, campañas/creativos en BD y métricas                     |
+| Comer / menús         | Catálogo API en live; menú demo solo local                                                        | Publicación y persistencia de menús reales                   |
+| Visita QR             | Token del backend; el staff confirma; PWA consulta visitas/saldo                                  | Adaptar escáner dashboard y probar físicamente el circuito   |
+| NFC histórico         | Código desactivado; cola anterior de IndexedDB conservada                                         | Reactivación y validación en otra feria                      |
+| Contactos comerciales | POST con consentimiento; confirmación tras ID del servidor                                        | Consulta/gestión en panel del expositor                      |
+| Intereses             | localStorage por cuenta/evento                                                                    | Sincronización en servidor                                   |
+| Mapa                  | Geometría publicada o maqueta compatible; último stand confirmado solo como origen orientativo    | Cotejo operativo, servicios y lotes fusionados               |
 
 ## Experiencia móvil actual
 
@@ -234,7 +240,15 @@ Para usar un Chromium existente, configurar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 
 Para aislar las pruebas de un servidor abierto, configurar `PWA_TEST_PORT` antes de ejecutarlas (por defecto, `4174`). El puerto debe estar libre; Playwright inicia y cierra su propio servidor de preview.
 
-Última verificación del 01/11/2026, Descubre, QR y plano oficial:
+Verificación del 04/11/2026, sector GAMLP y plano amarillo:
+
+- **66 pruebas unitarias aprobadas** en 14 archivos; incluyen agrupación de P14-A/B, validación del pase de prueba y deduplicación.
+- **20 pruebas locales, 21 demo y 30 live aprobadas** en navegador. El recorrido municipal se ejecuta en los tres modos, incluso cuando el API ofrece otro plano. La simulación no envía confirmaciones reales ni cambia puntos.
+- Tipos y compilaciones local/demo/live correctos. Carrusel automático, pausa, movimiento reducido, siete plantas 2D/3D y regresiones de sesión/QR siguen cubiertos.
+- Revisión visual del anuncio, plano, ficha, mini perfil y pase: móvil y escritorio, claro/oscuro, sin errores JavaScript ni desbordamiento. La suite demo cubre 320/390/768/1440 px. Capturas de esta entrega en `../../output/gamlp-demo-2026-11-04/` desde la raíz del repositorio.
+- Fuente del GAMLP y límites de la demostración documentados en [GAMLP-DEMO-2026-11-04.md](docs/GAMLP-DEMO-2026-11-04.md). La lectura física con dos dispositivos y el registro del sector en producción siguen pendientes.
+
+Verificación anterior del 01/11/2026, Descubre, QR y plano oficial:
 
 - **63 pruebas unitarias aprobadas** en 13 archivos, incluidas fechas sin hora, prioridad de API sobre afiches y cancelaciones recibidas.
 - **18 pruebas locales aprobadas** tras adecuar la suite a QR. La bienvenida crea la sesión de prueba antes de abrir el pase; las pruebas esperan a que termine la entrada antes de navegar. Se conservan los siete planos en 2D/3D, GPS, modo offline y cuatro anchos. NFC permanece desactivado, sin omitir pruebas ni retirar el modo local de CI.
