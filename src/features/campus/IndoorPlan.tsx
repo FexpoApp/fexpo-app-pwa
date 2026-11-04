@@ -1,6 +1,15 @@
 import { useEffect, useRef } from 'react';
+import { companiesAtLot } from '@/features/exhibitors/model';
 import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
-import { PLAN_LOTS, type PlanGeometry, type Lot } from '@/data/map-plans';
+import {
+  PLAN_LOTS,
+  lotDetail,
+  lotLabel,
+  lotPath,
+  lotTextColor,
+  type PlanGeometry,
+  type Lot,
+} from '@/data/map-plans';
 import { standAtLot, standAtLotIn, type PlanPosition } from './model';
 import type { Stand } from '@/types/domain';
 import type { CampusCamera } from './IndoorScene';
@@ -84,6 +93,7 @@ export default function IndoorPlan({
   lotRotations,
   backgroundSvgUrl,
   municipalSector = false,
+  showCompanies = false,
 }: {
   plan: PlanGeometry;
   position: PlanPosition;
@@ -99,6 +109,7 @@ export default function IndoorPlan({
   lotRotations?: number[];
   backgroundSvgUrl?: string;
   municipalSector?: boolean;
+  showCompanies?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   return (
@@ -120,7 +131,12 @@ export default function IndoorPlan({
           wrapperStyle={{ width: '100%', height: '100%' }}
           contentStyle={{ width: '100%', height: '100%' }}
         >
-          <svg viewBox={plan.viewBox} className="indoor-svg" aria-label={`Plano de ${plan.name}`}>
+          <svg
+            viewBox={plan.viewBox}
+            className="indoor-svg"
+            data-plan-revision={PLAN_LOTS[plan.id] ? '2026-11-04' : undefined}
+            aria-label={`Plano de ${plan.name}`}
+          >
             <path d={plan.outline} fill="var(--surface)" stroke={plan.color} strokeWidth={5} />
             {backgroundSvgUrl && /^https?:\/\//.test(backgroundSvgUrl) && (
               <image
@@ -156,6 +172,12 @@ export default function IndoorPlan({
               </g>
             ))}
             {lots.map(([code, x, y, w, h], index) => {
+              const source = lotDetail(plan.id, code);
+              const occupants = showCompanies ? companiesAtLot(plan.id, code) : [];
+              const logo = occupants.find((c) => c.logo)?.logo;
+              const logoSize = Math.max(0, Math.min(w - 8, h - 23, 58));
+              const logoX = (source?.labelAt?.[0] ?? x + w / 2) - logoSize / 2;
+              const logoY = (source?.labelAt?.[1] ?? y + h / 2) - logoSize / 2 - 5;
               const municipal = municipalSector && isGamlpLot(plan.id, code);
               const selectedSector =
                 municipal && selectedLot !== null && isGamlpLot(plan.id, lots[selectedLot]?.[0]);
@@ -164,11 +186,22 @@ export default function IndoorPlan({
                 : stands
                   ? standAtLotIn(stands, plan.id, code)
                   : standAtLot(plan.id, code);
+              const color = municipal
+                ? selectedSector
+                  ? '#d5f24a'
+                  : '#ece8b3'
+                : selectedLot === index
+                  ? '#087ec2'
+                  : (source?.color ??
+                    (stand ? plan.color : `color-mix(in srgb, ${plan.color} 14%, var(--surface))`));
               return (
                 <g
                   key={index}
                   data-lot={String(code)}
                   data-lot-index={index}
+                  data-company-ids={occupants.map((c) => c.id).join(',') || undefined}
+                  data-printed-code={lotLabel(plan.id, code)}
+                  data-footprint={source?.footprint ? 'polygon' : 'rectangle'}
                   data-sector={municipal ? 'gamlp' : undefined}
                   data-sector-selected={municipal ? String(selectedSector) : undefined}
                   transform={
@@ -181,9 +214,13 @@ export default function IndoorPlan({
                   aria-label={
                     municipal
                       ? `Ver sector GAMLP, espacio ${code}`
-                      : stand
-                        ? `Ver ${stand.name}, stand ${stand.boothCode}`
-                        : `Espacio ${code}`
+                      : occupants.length
+                        ? `Ver ${occupants.map((c) => c.name).join(', ')}, espacio ${lotLabel(plan.id, code)}`
+                        : stand
+                          ? `Ver ${stand.name}, stand ${stand.boothCode}`
+                          : source?.label
+                            ? `${source.label}, espacio ${lotLabel(plan.id, code)}`
+                            : `Espacio ${lotLabel(plan.id, code)}${source?.note ? ', rótulo duplicado' : ''}`
                   }
                   onClick={() => onSelectLot(index)}
                   onKeyDown={(e) => {
@@ -193,40 +230,68 @@ export default function IndoorPlan({
                     }
                   }}
                 >
-                  <rect
-                    x={x}
-                    y={y}
-                    width={w}
-                    height={h}
-                    fill={
-                      municipal
-                        ? selectedSector
-                          ? '#d5f24a'
-                          : '#ece8b3'
-                        : selectedLot === index
-                          ? '#087ec2'
-                          : stand
-                            ? plan.color
-                            : `color-mix(in srgb, ${plan.color} 14%, var(--surface))`
-                    }
+                  <path
+                    d={lotPath(plan.id, lots[index])}
+                    fill={color}
                     stroke={municipal ? '#656219' : selectedLot === index ? '#087ec2' : plan.color}
                     strokeWidth={municipal || selectedLot === index ? 4 : 1.3}
                   />
+                  {logo && !municipal && logoSize >= 12 && (
+                    <g pointerEvents="none" data-company-logo={logo.companyKey}>
+                      <rect
+                        x={logoX - 2}
+                        y={logoY - 2}
+                        width={logoSize + 4}
+                        height={logoSize + 4}
+                        rx={2}
+                        fill={logo.background === 'dark' ? '#132d46' : '#ffffff'}
+                      />
+                      <image
+                        href={logo.src}
+                        x={logoX}
+                        y={logoY}
+                        width={logoSize}
+                        height={logoSize}
+                        preserveAspectRatio="xMidYMid meet"
+                      />
+                    </g>
+                  )}
                   <text
-                    x={x + w / 2}
-                    y={municipal && code === 'P14-A' ? y + 27 : y + h / 2 + 5}
+                    x={source?.labelAt?.[0] ?? x + w / 2}
+                    y={
+                      logo && !municipal && logoSize >= 12
+                        ? logoY + logoSize + 14
+                        : source?.labelAt
+                          ? source.labelAt[1] + 5
+                          : municipal && code === 'P14-A'
+                            ? y + 27
+                            : y + h / 2 + 5
+                    }
                     textAnchor="middle"
                     fontSize={w < 35 ? 12 : 16}
                     fill={
                       municipal
                         ? '#132d46'
-                        : stand || selectedLot === index
-                          ? 'white'
-                          : 'var(--ink)'
+                        : source?.color || selectedLot === index
+                          ? lotTextColor(color)
+                          : stand
+                            ? 'white'
+                            : 'var(--ink)'
                     }
                   >
-                    {code}
+                    {lotLabel(plan.id, code)}
                   </text>
+                  {plan.id === 'entrance' && source?.label && w > 60 && (
+                    <text
+                      x={x + w / 2}
+                      y={y + h / 2 + 22}
+                      textAnchor="middle"
+                      fontSize={11}
+                      fill={lotTextColor(color)}
+                    >
+                      {source.label}
+                    </text>
+                  )}
                 </g>
               );
             })}

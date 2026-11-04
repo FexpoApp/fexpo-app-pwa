@@ -1,8 +1,18 @@
 import { useEffect, useRef } from 'react';
+import { companiesAtLot } from '@/features/exhibitors/model';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
-import { PLAN_LOTS, type Lot, type PlanGeometry } from '@/data/map-plans';
+import {
+  PLAN_LOTS,
+  lotDetail,
+  lotLabel,
+  lotFootprint,
+  lotPath,
+  lotTextColor,
+  type Lot,
+  type PlanGeometry,
+} from '@/data/map-plans';
 import { toWorld, WORLD_SCALE, type PlanPosition } from './model';
 export interface CampusCamera {
   zoom: (factor: number) => void;
@@ -17,6 +27,7 @@ interface Props {
   selectionBounds?: { x: number; y: number; width: number; height: number };
   lotHeights?: number[];
   showLotLabels?: boolean;
+  showCompanies?: boolean;
   showStructureLabels?: boolean;
   route?: PlanPosition[];
   showAvatar?: boolean;
@@ -54,6 +65,10 @@ export default function IndoorScene(props: Props) {
     renderer.domElement.dataset.campusCanvas = 'true';
     renderer.domElement.dataset.planId = plan.id;
     renderer.domElement.dataset.lotCount = String(lots.length);
+    if (PLAN_LOTS[plan.id]) {
+      renderer.domElement.dataset.planRevision = '2026-11-04';
+      renderer.domElement.dataset.lotCodes = lots.map(([code]) => String(code)).join(',');
+    }
     const scene = new THREE.Scene(),
       materials: THREE.Material[] = [],
       geometries: THREE.BufferGeometry[] = [],
@@ -121,6 +136,7 @@ export default function IndoorScene(props: Props) {
       grey = mat(dark ? '#45454b' : '#899bad');
     const glass = mat(dark ? '#3c5459' : '#c5e0e8');
     const shapeFrom = (path: string, depth: number, material: THREE.Material) => {
+      const meshes: THREE.Mesh[] = [];
       const paths = new SVGLoader().parse(
         `<svg xmlns="http://www.w3.org/2000/svg"><path d="${path}" /></svg>`,
       ).paths;
@@ -141,11 +157,23 @@ export default function IndoorScene(props: Props) {
           geometries.push(geo);
           const m = make(geo, material, 0, 0, 0);
           m.rotation.x = -Math.PI / 2;
+          meshes.push(m);
         }
+      return meshes;
     };
     shapeFrom(plan.outline, 0.12, floor);
     for (const s of plan.structures) shapeFrom(s.path, 0.38, grey);
-    const names = [...lots.map((l) => String(l[0])), ...plan.structures.map((s) => s.label || '')];
+    const companyLogos = lots.map(([code]) =>
+      props.showCompanies
+        ? companiesAtLot(plan.id, code).find((company) => company.logo)?.logo
+        : undefined,
+    );
+    let disposed = false;
+    const logoImages: HTMLImageElement[] = [];
+    const names = [
+      ...lots.map((l) => lotLabel(plan.id, l[0])),
+      ...plan.structures.map((s) => s.label || ''),
+    ];
     const grid = Math.max(1, Math.ceil(Math.sqrt(names.length))),
       cell = Math.min(256, Math.floor(2048 / grid)),
       atlas = document.createElement('canvas');
@@ -153,7 +181,12 @@ export default function IndoorScene(props: Props) {
     const ctx = atlas.getContext('2d');
     if (ctx)
       names.forEach((text, i) => {
-        ctx.fillStyle = i < lots.length && plan.zoneId === 'yellow' ? '#132d46' : '#ffffff';
+        ctx.fillStyle =
+          i < lots.length
+            ? lotTextColor(
+                props.lotColors?.[i] ?? lotDetail(plan.id, lots[i][0])?.color ?? plan.color,
+              )
+            : '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = `700 ${i < lots.length ? cell * 0.62 : cell * 0.19}px Poppins, sans-serif`;
@@ -168,6 +201,40 @@ export default function IndoorScene(props: Props) {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
     textures.push(texture);
+    renderer.domElement.dataset.companyLogoCount = '0';
+    companyLogos.forEach((logo, index) => {
+      if (!logo || !ctx) return;
+      const image = new Image();
+      logoImages.push(image);
+      image.onload = () => {
+        if (disposed) return;
+        const x = (index % grid) * cell,
+          y = Math.floor(index / grid) * cell;
+        ctx.clearRect(x, y, cell, cell);
+        ctx.fillStyle = logo.background === 'dark' ? '#132d46' : '#ffffff';
+        ctx.fillRect(x + 2, y + 2, cell - 4, cell - 4);
+        const scale = Math.min(
+          (cell - 16) / image.naturalWidth,
+          (cell * 0.65 - 8) / image.naturalHeight,
+        );
+        ctx.drawImage(
+          image,
+          x + (cell - image.naturalWidth * scale) / 2,
+          y + 8 + (cell * 0.65 - 8 - image.naturalHeight * scale) / 2,
+          image.naturalWidth * scale,
+          image.naturalHeight * scale,
+        );
+        ctx.fillStyle = logo.background === 'dark' ? '#ffffff' : '#132d46';
+        ctx.font = `700 ${cell * 0.23}px Poppins, sans-serif`;
+        ctx.fillText(names[index], x + cell / 2, y + cell * 0.84, cell - 8);
+        texture.needsUpdate = true;
+        renderer.domElement.dataset.companyLogoCount = String(
+          Number(renderer.domElement.dataset.companyLogoCount) + 1,
+        );
+        dirty = true;
+      };
+      image.src = logo.src;
+    });
     const labelMaterial = new THREE.MeshBasicMaterial({
       map: texture,
       transparent: true,
@@ -198,33 +265,53 @@ export default function IndoorScene(props: Props) {
     };
     const pickable: THREE.Mesh[] = [];
     lots.forEach(([code, x, y, w, h], index) => {
+      const source = lotDetail(plan.id, code);
       const p = toWorld(plan, { x: x + w / 2, y: y + h / 2 }),
         bw = w * WORLD_SCALE,
         bd = h * WORLD_SCALE;
       const height = props.lotHeights?.[index] ?? 1.2;
-      const base = box(bw - 0.04, height, bd - 0.04, cream, p.x, height / 2 + 0.12, p.z);
-      base.userData.lotIndex = index;
-      pickable.push(base);
-      const top = box(
-        bw - 0.075,
-        0.12,
-        bd - 0.075,
-        props.lotColors?.[index] ? mat(props.lotColors[index]) : accent,
-        p.x,
-        height + 0.18,
-        p.z,
-      );
-      top.userData.lotIndex = index;
-      pickable.push(top);
-      box(Math.max(0.1, bw - 0.22), 0.5, 0.035, glass, p.x, 0.7, p.z + bd / 2);
+      const color = props.lotColors?.[index] ?? source?.color;
+      const labelPoint = source?.labelAt
+        ? toWorld(plan, { x: source.labelAt[0], y: source.labelAt[1] })
+        : p;
+      if (source?.footprint) {
+        const path = lotPath(plan.id, lots[index]);
+        for (const mesh of shapeFrom(path, height + 0.12, cream)) {
+          mesh.userData.lotIndex = index;
+          pickable.push(mesh);
+        }
+        for (const mesh of shapeFrom(path, 0.12, color ? mat(color) : accent)) {
+          mesh.position.y = height + 0.12;
+          mesh.userData.lotIndex = index;
+          pickable.push(mesh);
+        }
+      } else {
+        const base = box(bw - 0.04, height, bd - 0.04, cream, p.x, height / 2 + 0.12, p.z);
+        base.userData.lotIndex = index;
+        pickable.push(base);
+        const top = box(
+          bw - 0.075,
+          0.12,
+          bd - 0.075,
+          color ? mat(color) : accent,
+          p.x,
+          height + 0.18,
+          p.z,
+        );
+        top.userData.lotIndex = index;
+        pickable.push(top);
+        box(Math.max(0.1, bw - 0.22), 0.5, 0.035, glass, p.x, 0.7, p.z + bd / 2);
+      }
       if (props.showLotLabels !== false)
         label(
           index,
-          p.x,
-          p.z,
+          labelPoint.x,
+          labelPoint.z,
           height + 0.26,
-          Math.min(bw * 0.9, props.lotColors ? 5 : 1.7),
-          Math.min(bd * 0.9, 1.3),
+          companyLogos[index]
+            ? Math.min(bw * 0.8, bd * 0.8, 2.6)
+            : Math.min(bw * 0.9, props.lotColors ? 5 : 1.7),
+          companyLogos[index] ? Math.min(bw * 0.8, bd * 0.8, 2.6) : Math.min(bd * 0.9, 1.3),
         );
     });
     plan.structures.forEach((s, i) => {
@@ -433,12 +520,15 @@ export default function IndoorScene(props: Props) {
             width: w,
             height: h,
           } = current.selectionBounds ?? { x: lx, y: ly, width: lw, height: lh };
-          const corners = [
-            { x, y },
-            { x: x + w, y },
-            { x: x + w, y: y + h },
-            { x, y: y + h },
-          ].map((p) => {
+          const footprint = current.selectionBounds
+            ? [
+                { x, y },
+                { x: x + w, y },
+                { x: x + w, y: y + h },
+                { x, y: y + h },
+              ]
+            : lotFootprint(plan.id, lot).map(([x, y]) => ({ x, y }));
+          const corners = footprint.map((p) => {
             const world = toWorld(plan, p);
             return new THREE.Vector3(world.x, 1.5, world.z);
           });
@@ -482,6 +572,10 @@ export default function IndoorScene(props: Props) {
     }
     frame = requestAnimationFrame(draw);
     return () => {
+      disposed = true;
+      logoImages.forEach((image) => {
+        image.onload = null;
+      });
       cancelAnimationFrame(frame);
       resize.disconnect();
       intersection.disconnect();
@@ -499,6 +593,6 @@ export default function IndoorScene(props: Props) {
       renderer.forceContextLoss();
       renderer.domElement.remove();
     };
-  }, [props.plan.id, props.dark]);
+  }, [props.plan.id, props.dark, props.showCompanies]);
   return <div className="campus-canvas" ref={host} />;
 }
