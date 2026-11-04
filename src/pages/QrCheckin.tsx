@@ -7,6 +7,7 @@ import { STANDS } from '@/data/demo-data';
 import { useDemo, type Receipt } from '@/state/demo';
 import { useStands } from '@/state/experience';
 import { Modal } from '@/ui/components';
+import { GAMLP } from '@/features/sectors/gamlp';
 
 /** The visitor displays a credential; only authorized stand staff confirms a real visit. */
 export function QrCheckin() {
@@ -17,6 +18,13 @@ export function QrCheckin() {
   );
   return (
     <div className="qr-checkin compact-flow">
+      {params.get('sector') === 'gamlp' && (
+        <p className="qr-stand-context">
+          Sector GAMLP · P14-A y P14-B · Un único registro de visita.
+          <br />
+          <small>{GAMLP.location}</small>
+        </p>
+      )}
       {selected && <p className="qr-stand-context">En {selected.name}</p>}
       {LIVE ? <LiveQr /> : <DemoQrPage checkin />}
       {!LIVE && <DemoVisit target={params.get('stand') || params.get('standId')} />}
