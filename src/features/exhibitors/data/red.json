@@ -1,0 +1,656 @@
+[
+  {
+    "planId": "red-lower",
+    "printedCode": "1",
+    "name": "A3TEX",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "2",
+    "name": "Cernatur Chokokin",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "3",
+    "name": "Industrias Copacabana",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "5",
+    "name": "Chocolates Gozo",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "6",
+    "name": "Problock",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "7",
+    "name": "Carola Montaño",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "8",
+    "name": "Ricolpack M y M",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "9",
+    "name": "Ana María Lajusticia",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "10",
+    "name": "La Finca",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "11",
+    "name": "Fuentes Prime",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "12",
+    "name": "Pacheco Cons y Diseño SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "13",
+    "name": "Tiziano",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "14",
+    "name": "Entel",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "16",
+    "name": "Carmax",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "17",
+    "name": "Moda Corp",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "18",
+    "name": "Cepas Mendocinas",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "19",
+    "name": "Agronat",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "20",
+    "name": "Bellido Camargo Construcciones",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "21",
+    "name": "Impuestos Nacionales",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "22",
+    "name": "Inocom SRL Covarrubias",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "24",
+    "name": "Inmobiliaria Santa Luz",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "25",
+    "name": "Vatiment SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "26",
+    "name": "Paradisse - Cahuana",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "27",
+    "name": "Alianza Seguros",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "28",
+    "name": "Openbrands",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "29",
+    "name": "Chocolates Cóndor",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "30",
+    "name": "Openbrands",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "31",
+    "name": "Fitopharma",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "32",
+    "name": "Openbrands",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "33",
+    "name": "Equilibrio y Armonía",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "34",
+    "name": "D - Openbrands",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "34C",
+    "name": "Swissôtel",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "34B",
+    "name": "Sisife",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "35",
+    "name": "Tierra Quinta",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "36",
+    "name": "Ferrpro",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "37",
+    "name": "Wella",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "38",
+    "name": "Dajer Importaciones",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "40A",
+    "name": "Burlesque y Tomatitos",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "40B",
+    "name": "Dabalash",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "41",
+    "name": "Molinos Saharita",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "42",
+    "name": "Thermoandes",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "43",
+    "name": "Scavenger",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "44",
+    "name": "Medetec SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "45",
+    "name": "Saunas Lotus",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "46",
+    "name": "Kawasiy",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "47",
+    "name": "Homme et Femme",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "49A",
+    "name": "López Azero Inversiones SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "49B",
+    "name": "Vitaldenti SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "49C",
+    "name": "ESECE",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "49D",
+    "name": "Pamela Hidalgo",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "50",
+    "name": "Dorado Labs PY Inc",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "51",
+    "name": "Prospera",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "52",
+    "name": "Naturex SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "53",
+    "name": "BBR",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "54A",
+    "name": "Panablue Distribuidora",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "54B",
+    "name": "Señor de Mayo",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "55",
+    "name": "Inmolider",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "55A",
+    "name": "App Ahayou",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "56A",
+    "name": "Visión TV",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "56B",
+    "name": "La Razón",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "57",
+    "name": "Lexus Men Suit",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "58",
+    "name": "Totes",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "59",
+    "name": "Neko Imp",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "60",
+    "name": "Templario La Paz Bienes Raíces",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "62",
+    "name": "Cotom Viu",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "63",
+    "name": "Cimac",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "64",
+    "name": "Kantutani",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "66",
+    "name": "Libros San Andrés",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "67",
+    "name": "Media Company - JH Safe",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "68",
+    "name": "Mansión Deco",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "70",
+    "name": "SM Fragance",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "74",
+    "name": "Cool Panda",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "75",
+    "name": "Cernavtur Ester",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "76",
+    "name": "Campos del Sur",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "77",
+    "name": "Roshy Bio Rocío Llanque",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "78",
+    "name": "David Santalla",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "79",
+    "name": "Estudio de Arquitectura FA",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "80A",
+    "name": "CDATEXX SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "80B",
+    "name": "La Camargueñita",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "81",
+    "name": "Macor",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "82",
+    "name": "Grup Adaptia SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "83",
+    "name": "Macor",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "84",
+    "name": "Muebles Torrez",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "85",
+    "name": "Macor",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "86",
+    "name": "Yong Jetay Seven SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "88",
+    "name": "Hotel Yotau",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "89",
+    "name": "Iman Aojian",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "90",
+    "name": "Río Selva",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "91",
+    "name": "Luigi Vincenzo",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "92A",
+    "name": "ZG Brokers",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "93B",
+    "name": "Sucre",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "94",
+    "name": "Hotel Yotau",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "96A",
+    "name": "Productos Frutillita",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "96B",
+    "name": "Bounarrotti",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "97",
+    "name": "Sernatur",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "98",
+    "name": "Ofebre",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "99",
+    "name": "Sernatur",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "100",
+    "name": "Tecnocafé",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "101",
+    "name": "Go USA",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "102",
+    "name": "Grupo Urqupiña",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "103",
+    "name": "Renacer SRL",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "104",
+    "name": "Mentex",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "105",
+    "name": "Sauna Const",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "106",
+    "name": "CEMSE",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "107",
+    "name": "Todo Brillo Surco y Surcos",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "109",
+    "name": "Lexus",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-upper",
+    "printedCode": "110",
+    "name": "Parque Acuático Star Park",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "R1",
+    "name": "VHS",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  },
+  {
+    "planId": "red-lower",
+    "printedCode": "R2",
+    "name": "Brillo Tintas Ltda.",
+    "sourceImage": "IMG_20261104_094904.jpg"
+  }
+]
