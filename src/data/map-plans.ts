@@ -6,7 +6,8 @@
  * para que la app y la demo web dibujen el mismo recinto. Produccion solo usa
  * esta maqueta cuando los planos publicados por el API coinciden exactamente.
  * Si Franco corrige un plano alla, se copia el bloque aca. Geometria
- * simplificada, no relevada.
+ * simplificada, no relevada. Bloque amarillo actualizado el 04/11/2026
+ * con IMG_20261104_094841.jpg (90A/90B y 53A/53B/53C).
  *
  * Unidades: las del `viewBox` de cada plano (como en el SVG de la web).
  */
@@ -246,10 +247,14 @@ const yl = 'yellow-lower';
 row(yl, [86, 85, 84, 83], 210, 164, 35, 42, 9);
 box(yl, 69, 350, 164, 69, 81, 42);
 row(yl, [68, 67], 419, 164, [69, 53], 42);
-box(yl, 53, 592, 164, 69, 81, 46.5);
+box(yl, '53B', 592, 164, 35, 37);
+box(yl, '53A', 592, 201, 35, 44);
+box(yl, '53C', 627, 164, 34, 81);
 row(yl, [52, 51, 50], 661, 164, 35, 42, 9);
-box(yl, 49, 766, 164, 69, 70, 27);
-box(yl, 48, 835, 164, 69, 35, 27);
+// Upper perimeter is a continuous row in the current photograph, not a
+// double-height 49. The printed plan repeats 49 where the directory lists 51;
+// retain 51 in the preceding row until that conflicting label is clarified.
+row(yl, [49, 48, 47, 46], 766, 164, [35, 34, 35, 34], 42);
 column(yl, [1, 2, 3, 4], 210, 234, 104, [88, 58, 57, 69]);
 box(yl, 5, 174, 506, 104, 71, 54);
 box(yl, 6, 278, 506, 36, 71, 18);
@@ -288,7 +293,7 @@ box(yu, 109, 555, 165, 76, 64, 41.25);
 row(yu, [119, 120, 121, 122], 644, 165, [32, 29, 29, 35], 30);
 box(yu, 123, 769, 165, 70, 64, 33);
 row(yu, [139, 140], 839, 165, [29, 46], 30);
-column(yu, [91, 90, 89, 88, 87], 184, 229, 29, [47, 58, 58, 58, 59]);
+column(yu, [91, '90A', '90B', 89, 88, 87], 184, 229, 29, [47, 29, 29, 58, 58, 59]);
 column(yu, [203, 202, 201, 200, 199, 198], 249, 229, 58, [58, 57, 58, 58, 47, 71]);
 column(yu, [97, 98, 99, 100], 342, 229, 44, 58, 18.75);
 column(yu, [105, 104, 103, 102], 386, 229, 44, 58, 18.75);
