@@ -20,8 +20,8 @@ El QR de prueba no es un QR de acceso a la app ni una credencial de producción.
 - **Escudo oficial:** [sitio del GAMLP](https://lapaz.bo/), recurso servido por su cabecera: [cropped-logolpz26-1.png](https://lapaz.bo/wp-content/uploads/2026/06/cropped-logolpz26-1.png). Copia local en `public/brands/gamlp-2026.png`.
 - **Planta alta:** el modelo ya tenía las posiciones de P14-A/B. Se conservan ambos polígonos y se vinculan a una identidad conjunta. El espacio 90 se divide en **90A/90B** como en la foto; el número de polígonos pasa de 133 a **134**.
 - **Planta baja:** 53 se divide en **53A/53B/53C**; se corrige la fila superior para incluir **47/46**, y 49 deja de ocupar doble altura. Pasa de 90 a **94** polígonos.
-- Se preservan contornos, accesos, rampas, coordenadas y `viewBox`. El modelo completo pasa de 472 a **477 polígonos**, que no equivalen a 477 empresas. La escala sigue siendo aproximada y el plano no está georreferenciado.
-- **Conflicto visible:** la foto imprime 49 dos veces en la fila superior del amarillo bajo, donde la versión anterior tenía 51; el directorio sí contiene 51 (Hotel Gloria). Se conserva 51 hasta aclarar esa discrepancia, sin crear dos lotes con la misma identidad.
+- En esta primera entrega del amarillo el modelo pasó de 472 a 477 polígonos. La revisión posterior de todas las fotos lo dejó en **450 espacios/zonas**; ver [revisión completa](PLANOS-FOTOGRAFIADOS-2026-11-04.md). La escala sigue siendo aproximada, sin georreferenciación.
+- **Conflicto visible:** la foto imprime 49 dos veces en la fila superior del amarillo bajo, donde la versión anterior tenía 51; el directorio sí contiene 51 (Hotel Gloria). La revisión completa reproduce ambos rótulos 49 con IDs físicos distintos (`49-ref` y `49`) y una nota en la ficha, sin afirmar dónde está el 51.
 - Sufijos comerciales del directorio como 114A/B, 116A/B o 202A/B/C/D no implican límites físicos relevados. No se inventaron nuevas divisiones para ellos. La lista de emprendedores municipales aún no fue entregada; no se atribuyen los expositores generales del pabellón al GAMLP.
 
 ## Integración y pendientes

@@ -2,7 +2,11 @@
 
 Aplicación de visitantes en React, Vite y TypeScript. Identidad FEXPO: símbolo de módulos, Poppins, azul, lima y marfil; temas claro y oscuro.
 
-Producción: [app.fexpo.lat](https://app.fexpo.lat). **La entrega GAMLP del 04/11/2026 está en el espacio de trabajo para revisión; aún no se ha publicado.** Conserva las actualizaciones previas de Inicio, Descubre, QR e iconos oficiales.
+Producción: [app.fexpo.lat](https://app.fexpo.lat). Revisión del 04/11/2026: planos, directorio fotografiado y marcas verificadas. Conserva Inicio, Descubre, QR, iconos oficiales y el sector GAMLP.
+
+Planos actuales: [fuentes, cambios por bloque y pendientes](docs/PLANOS-FOTOGRAFIADOS-2026-11-04.md). Se cotejaron rojo bajo/alto, amarillo bajo/alto, verde alto, ingreso principal y patio de comidas. Son **450 espacios y zonas**, con formas y numeración compartidas en 2D/3D. El acceso Mapa abre `/map?reference=2026-11-04`; la referencia no modifica el catálogo publicado ni la base de datos.
+
+Expositores: **349 filas fotografiadas, 319 identidades por nombre, 22 logos/iconos de marca verificados**. Las dos ubicaciones municipales confirmadas completan 351 asignaciones: 346 ubicadas y 5 pendientes. Fichas con nombre, logo o iniciales y todos sus espacios; los lotes compartidos muestran sus ocupantes. [Fuentes y discrepancias](docs/DIRECTORIO-Y-LOGOS-2026-11-04.md) · [Checklist de backend y BD](docs/INTEGRACION-EXPOSITORES-2026-11-04.md) · [Datos para conciliación](docs/data/exhibitor-placements-2026-11-04.json).
 
 Demo municipal: [recorrido, fuentes del mapa y pendientes de integración](docs/GAMLP-DEMO-2026-11-04.md). En desarrollo, abrir `/sectors/gamlp?demo=1` o entrar desde el anuncio del GAMLP en Inicio. P14-A y P14-B forman un único sector. La lista real se carga en `GAMLP_ENTREPRENEURS`; los ejemplos y el conteo QR simulado están identificados y separados de los datos reales.
 
@@ -23,12 +27,15 @@ Las casillas marcadas describen código de la PWA, no un despliegue ni una certi
 - [x] Visitas por QR personal: GET /me/qr, pase visible desde Check-in y actualización del progreso cada 4 segundos mientras se muestra. Abrir un enlace de stand o mostrar un QR no acredita puntos.
 - [x] NFC en pausa (`NFC_ENABLED = false`): sin botón de lectura; `/nfc-test` redirige a Check-in. Código y pruebas unitarias conservados para una futura feria.
 - [x] Iconos de instalación con isotipo oficial negro sobre lima: PNG 192/512, máscara Android, Apple 180 y favicon. URLs versionadas `fexpo-official-v2-*` para comunicar el cambio a instalaciones existentes.
-- [x] Comparación inicial del PDF oficial con las siete zonas y 472 espacios del modelo. El 04/11 se cotejó el amarillo con las fotos actuales y se corrigieron divisiones y rótulos: ahora son 477 polígonos en total. El plano sigue siendo aproximado, sin georreferenciación. Servicios conserva el PDF oficial.
+- [x] Cotejo de las siete zonas con las fotos del 04/11: subdivisiones del rojo y amarillo, sectores V5/CDT, selfies, plaza y patio con puestos hexagonales. Total actual: 450 espacios/zonas; la entrega previa del amarillo tenía 477. Se reproduce el doble 49 impreso con identidades físicas distintas y nota de discrepancia. El trazado sigue siendo aproximado, sin georreferenciación. Servicios conserva el PDF oficial.
 - [x] Se mantienen sesión, favoritos, contactos con consentimiento, intereses, mapa 2D/3D, ofertas y progreso confirmado por servidor.
+
+- [x] Directorio `/companies`, fichas de expositores y logos locales en el mapa 2D/3D. Búsqueda por empresa/código, espacios compartidos y respaldo con iniciales. Separado de los UUID operativos hasta conciliar con la API.
 
 ### Pendientes por responsable
 
 - [x] **PWA — GAMLP:** anuncio institucional → mapa amarillo alto → selección conjunta P14-A/P14-B → ficha, directorio y mini perfiles; demostración de un conteo QR único por pase. Correcciones 90A/B y 53A/B/C según las fotos del 04/11. [Detalle y límites](docs/GAMLP-DEMO-2026-11-04.md).
+- [ ] **Backend / BD — expositores:** conciliar las 351 asignaciones con UUID reales, publicar nombres/logos y múltiples ocupantes por lote, conservar los cinco códigos sin ubicación segura. Revisar esquema existente, importar de forma idempotente y sustituir fichas curadas al publicar. [Pasos y aceptación](docs/INTEGRACION-EXPOSITORES-2026-11-04.md).
 - [ ] **Omar / GAMLP:** entregar la lista real de emprendedores con productos y datos autorizados. No se publican nombres ficticios como participantes confirmados.
 - [ ] **Backend / BD / dashboard — GAMLP:** asociar ambos lotes a un único sector/stand UUID real y su personal; persistir directorio y visitas, integrar el escáner autorizado y validar el circuito con dos dispositivos. El conteo del demo solo vive en este navegador.
 
@@ -41,29 +48,31 @@ Las casillas marcadas describen código de la PWA, no un despliegue ni una certi
 - [ ] **PWA / backend — métricas comerciales:** definir y persistir impresiones/clics, deduplicación y reportes. El carrusel no simula ventas ni registra métricas todavía.
 - [ ] **PWA — issue #6:** dinámicas reales, finalización idempotente y progreso del servidor. Los juegos actuales siguen como muestras bloqueadas.
 - [ ] **PWA / mapa — issues #10 y #8:** validar fusiones, ocupantes, escala, orientación y paridad 2D/3D. Cotejar cada lote con el plano operativo; completar mesas, accesos y servicios. Ver comparación documentada.
+- [x] **PWA / mapa — revisión fotográfica:** numeración y formas de las siete zonas cotejadas; formas poligonales compartidas, mobiliario de comidas y referencia navegable también en live.
+- [ ] **Organización / backend — mapa:** resolver el doble 49/51, validar medidas en el recinto y conciliar UUID, ocupantes y posiciones publicados con las nuevas divisiones. Las asignaciones actuales proceden de las listas fotografiadas; falta conciliarlas con los UUID y resolver cinco ubicaciones pendientes.
 - [ ] **PWA / backend — issue #9:** promociones flash/avisos publicados, ventana de vigencia, expiración y enlace. Las promociones no equivalen a anuncios pagados.
 - [ ] **PWA / backend — issue #1:** conciliar integración general y sesión/datos comunes con la issue #3 de Saúl.
 - [ ] **PWA / backend:** sincronización entre dispositivos de intereses/preferencias; hoy se guardan por cuenta/evento en este navegador.
 
 ### Qué se consulta o guarda hoy
 
-| Función               | Fuente o persistencia actual                                                                      | Falta                                                        |
-| --------------------- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Agenda / Hoy          | API de actividades y transcripción local de afiches con fecha/fuente; día en URL                  | Publicación editorial única, horarios, retiros/cancelaciones |
-| Anuncios              | Ejemplos locales; anuncio institucional GAMLP curado en PWA; campañas pagadas live aún sin fuente | API, campañas/creativos en BD y métricas                     |
-| Comer / menús         | Catálogo API en live; menú demo solo local                                                        | Publicación y persistencia de menús reales                   |
-| Visita QR             | Token del backend; el staff confirma; PWA consulta visitas/saldo                                  | Adaptar escáner dashboard y probar físicamente el circuito   |
-| NFC histórico         | Código desactivado; cola anterior de IndexedDB conservada                                         | Reactivación y validación en otra feria                      |
-| Contactos comerciales | POST con consentimiento; confirmación tras ID del servidor                                        | Consulta/gestión en panel del expositor                      |
-| Intereses             | localStorage por cuenta/evento                                                                    | Sincronización en servidor                                   |
-| Mapa                  | Geometría publicada o maqueta compatible; último stand confirmado solo como origen orientativo    | Cotejo operativo, servicios y lotes fusionados               |
+| Función               | Fuente o persistencia actual                                                                        | Falta                                                        |
+| --------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Agenda / Hoy          | API de actividades y transcripción local de afiches con fecha/fuente; día en URL                    | Publicación editorial única, horarios, retiros/cancelaciones |
+| Anuncios              | Ejemplos locales; anuncio institucional GAMLP curado en PWA; campañas pagadas live aún sin fuente   | API, campañas/creativos en BD y métricas                     |
+| Comer / menús         | Catálogo API en live; menú demo solo local                                                          | Publicación y persistencia de menús reales                   |
+| Visita QR             | Token del backend; el staff confirma; PWA consulta visitas/saldo                                    | Adaptar escáner dashboard y probar físicamente el circuito   |
+| NFC histórico         | Código desactivado; cola anterior de IndexedDB conservada                                           | Reactivación y validación en otra feria                      |
+| Contactos comerciales | POST con consentimiento; confirmación tras ID del servidor                                          | Consulta/gestión en panel del expositor                      |
+| Intereses             | localStorage por cuenta/evento                                                                      | Sincronización en servidor                                   |
+| Mapa / directorio     | Planos y listas fotografiados; fichas y logos curados locales. Mapa operativo por UUID conserva API | Conciliación, publicación y cinco ubicaciones pendientes     |
 
 ## Experiencia móvil actual
 
 - **Inicio:** botón compacto con el logotipo oficial de FIPAZ y acceso a su agenda; Mapa, Stands y Check-in; anuncios separados de stands destacados y ofertas. Se conserva el trabajo previo de descubrimiento y navegación.
 - **Agenda:** programación por día del 28 de octubre al 8 de noviembre, con línea de tiempo. En live utiliza actividades publicadas del evento; local/demo contiene ejemplos identificados. Los horarios generales y la ubicación del patio de comidas son información oficial, no horarios inventados de conciertos.
 - **Stands:** filas horizontales por categoría y flecha hacia la categoría completa. Búsqueda por nombre, rubro, descripción y código; acepta códigos con o sin guion y varios términos.
-- **Perfil de empresa:** nombre a la izquierda, imagen a la derecha, guardar, compartir y ubicación. Las redes se muestran cuando existen datos publicados. La API pública actual no entrega logos ni redes; se utiliza una ilustración de categoría como respaldo.
+- **Perfil de empresa:** nombre a la izquierda, imagen a la derecha, guardar, compartir y ubicación. Las redes se muestran cuando existen datos publicados. Los perfiles operativos dependen de los campos publicados por la API. El directorio fotografiado tiene fichas informativas propias con logos verificados o iniciales; no convierte slugs locales en UUID de stand.
 - **Conexión comercial:** formulario con consentimiento explícito, nombre, correo, celular internacional opcional y nota. La confirmación se muestra después de recibir el identificador del servidor.
 - **Servicios comerciales:** orden Ofertas → Dinámicas → Catálogo. Permanecen bloqueados con muestras identificadas; los ejemplos no entregan descuentos, premios ni puntos.
 - **Perfil del visitante:** presentación compacta, avatar Google cuando está disponible, preferencias, QR y recorrido.
@@ -240,7 +249,15 @@ Para usar un Chromium existente, configurar `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 
 Para aislar las pruebas de un servidor abierto, configurar `PWA_TEST_PORT` antes de ejecutarlas (por defecto, `4174`). El puerto debe estar libre; Playwright inicia y cierra su propio servidor de preview.
 
-Verificación del 04/11/2026, sector GAMLP y plano amarillo:
+Verificación del 04/11/2026, revisión completa de planos:
+
+- **79 pruebas unitarias aprobadas** en 15 archivos. La lista esperada de rótulos se transcribió independientemente de las fotos; se comprueban las formas y la separación de ocupantes retirados de V5/CDT.
+- **21 pruebas locales completas, 22 casos demo y 31 live verificados.** Se repitieron los casos afectados tras corregir la posición de controles en escritorio y actualizar la expectativa del rojo bajo de 51 a 55 espacios. La comprobación de siete planos y paridad 2D/3D se ejecuta en los tres modos.
+- **28 capturas** de las siete zonas en móvil/escritorio, claro/oscuro, además de la revisión del ajuste de controles y de selección real por clic del hexágono 22 en 3D. Sin errores JavaScript ni desbordamiento en esa revisión; controles fuera de la barra fija a 320/768/1440 px.
+- Tipos y compilaciones local/demo/live correctos. La compilación final conserva la configuración live habitual, sin el identificador temporal de Google usado por QA. Las capturas están en `../../output/map-audit-2026-11-04/` desde la raíz del repositorio.
+- [Fuentes, cambios y límites de los planos](docs/PLANOS-FOTOGRAFIADOS-2026-11-04.md). Pendiente publicación de esta entrega, conciliación del catálogo del backend y confirmación del doble 49/51.
+
+Verificación anterior del 04/11/2026, sector GAMLP y plano amarillo:
 
 - **66 pruebas unitarias aprobadas** en 14 archivos; incluyen agrupación de P14-A/B, validación del pase de prueba y deduplicación.
 - **20 pruebas locales, 21 demo y 30 live aprobadas** en navegador. El recorrido municipal se ejecuta en los tres modos, incluso cuando el API ofrece otro plano. La simulación no envía confirmaciones reales ni cambia puntos.
