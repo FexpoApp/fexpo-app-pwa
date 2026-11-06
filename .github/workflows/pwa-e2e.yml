@@ -8,8 +8,10 @@ on:
       - 'src/**'
       - 'server/**'
       - 'tests/**'
+      - 'docs/data/gamlp-api-catalog-2026-11-06.json'
       - 'scripts/build-mode.mjs'
       - 'scripts/test-e2e.mjs'
+      - 'scripts/test-pwa-update.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'playwright.config.ts'
@@ -24,8 +26,10 @@ on:
       - 'src/**'
       - 'server/**'
       - 'tests/**'
+      - 'docs/data/gamlp-api-catalog-2026-11-06.json'
       - 'scripts/build-mode.mjs'
       - 'scripts/test-e2e.mjs'
+      - 'scripts/test-pwa-update.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'playwright.config.ts'
@@ -76,6 +80,8 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm run build:${{ matrix.mode }}
       - run: npm run test:e2e:${{ matrix.mode }}
+      - run: npm run test:pwa-update
+        if: matrix.mode == 'live'
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

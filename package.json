@@ -16,6 +16,7 @@
     "test:e2e:live": "node scripts/test-e2e.mjs live",
     "test:e2e:demo": "node scripts/test-e2e.mjs demo",
     "test:e2e:local": "node scripts/test-e2e.mjs local",
+    "test:pwa-update": "node scripts/test-pwa-update.mjs",
     "format": "prettier --write ."
   },
   "dependencies": {
