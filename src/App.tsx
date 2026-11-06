@@ -14,13 +14,56 @@ import { NFC_ENABLED } from './services/config';
 import { NfcProbe } from './pages/NfcProbe';
 import { GamlpSectorPage } from './pages/Sector';
 import { PhotoCompaniesPage, PhotoCompanyPage } from './pages/Companies';
+import { FairShell } from './features/events/FairShell';
+import {
+  FairSelectionPage,
+  PucHomePage,
+  PucRoutePage,
+  PucExperiencePage,
+  PucAccountPage,
+  PucNotFound,
+  UnknownFairPage,
+} from './features/events/Pages';
+import { PucMapPage } from './features/events/Map';
+import { PucRatingPage } from './features/events/Rating';
+import { PucScannerPage } from './features/events/Scanner';
+import { PucGoogleGate } from './features/events/GoogleGate';
+import { PUC_BASE, FIPAZ_HOME } from './features/events/catalog';
 
 export function App() {
   return (
     <Routes>
+      <Route element={<FairShell />}>
+        <Route index element={<FairSelectionPage />} />
+        <Route path="cuenta" element={<PucAccountPage />} />
+        <Route path="ferias" element={<Navigate to="/" replace />} />
+        <Route path={PUC_BASE} element={<PucHomePage />} />
+        <Route path={PUC_BASE + '/mapa'} element={<PucMapPage />} />
+        <Route path={PUC_BASE + '/recorrido'} element={<PucRoutePage />} />
+        <Route path={PUC_BASE + '/experiencias/:point'} element={<PucExperiencePage />} />
+        <Route
+          path={PUC_BASE + '/calificar/:point'}
+          element={
+            <PucGoogleGate purpose="rating">
+              <PucRatingPage />
+            </PucGoogleGate>
+          }
+        />
+        <Route
+          path={PUC_BASE + '/escanear'}
+          element={
+            <PucGoogleGate purpose="scanner">
+              <PucScannerPage />
+            </PucGoogleGate>
+          }
+        />
+        <Route path={PUC_BASE + '/perfil'} element={<PucAccountPage />} />
+        <Route path={PUC_BASE + '/*'} element={<PucNotFound />} />
+        <Route path="ferias/:event/*" element={<UnknownFairPage />} />
+      </Route>
       <Route element={<LocalEntry />}>
         <Route element={<Shell />}>
-          <Route index element={<HomePage />} />
+          <Route path={FIPAZ_HOME} element={<HomePage />} />
           <Route path="map" element={<MapPage />} />
           <Route path="scan" element={<CheckinPage />} />
           <Route

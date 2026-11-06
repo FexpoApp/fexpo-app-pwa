@@ -12,7 +12,11 @@ export function InterestOnboarding() {
     { pathname } = useLocation();
   if (
     !editor.open &&
-    !(preference.autoAsk && !preference.completed && ['/', '/profile'].includes(pathname))
+    !(
+      preference.autoAsk &&
+      !preference.completed &&
+      ['/ferias/fipaz-2026', '/profile'].includes(pathname)
+    )
   )
     return null;
   const close = () => editor.close();

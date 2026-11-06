@@ -26,12 +26,13 @@ import { LIVE, LOCAL } from '@/services/config';
 import { AudioHost } from '@/features/audio/AudioHost';
 import { ConnectionStatus } from './Connection';
 import { Brand } from './Brand';
+import { FIPAZ_HOME } from '@/features/events/catalog';
 import { stopNfcReading } from '@/services/nfc';
 import { InterestOnboarding } from './InterestOnboarding';
 import { useCampusLocation } from '@/features/campus/location';
 
 const tabs = [
-  { path: '/', label: 'Inicio', icon: Home },
+  { path: FIPAZ_HOME, label: 'Inicio', icon: Home },
   { path: '/map', label: 'Mapa', icon: Map },
   { path: '/scan', label: 'Check-in', icon: QrCode },
   { path: '/discover', label: 'Descubre', icon: Compass },
@@ -58,6 +59,7 @@ interface InstallEvent extends Event {
 
 export function Shell() {
   const { pathname } = useLocation();
+  const isHome = pathname === FIPAZ_HOME;
   useEffect(() => () => stopNfcReading(), [pathname]);
   const navigate = useNavigate();
   const state = useExperience();
@@ -141,7 +143,7 @@ export function Shell() {
   }, []);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
-    document.title = `${pathname === '/' ? 'Inicio' : title} · Fexpo`;
+    document.title = `${isHome ? 'Inicio' : title} · Fexpo`;
   }, [pathname, title]);
   useEffect(() => {
     if (!toast) return;
@@ -213,7 +215,7 @@ export function Shell() {
           </div>
         </div>
       </aside>
-      <div className="app-shell">
+      <div className="app-shell fipaz-shell">
         <a className="skip-link" href="#content">
           Ir al contenido
         </a>
@@ -229,13 +231,13 @@ export function Shell() {
             >
               <ArrowLeft size={23} />
             </button>
-          ) : pathname === '/' ? (
+          ) : isHome ? (
             <Link to="/" className="header-brand" aria-label="Fexpo, inicio">
               <Brand />
             </Link>
           ) : null}
-          {pathname !== '/' && <span className="header-title">{title}</span>}
-          {pathname === '/' && <span className="header-spacer" />}
+          {!isHome && <span className="header-title">{title}</span>}
+          {isHome && <span className="header-spacer" />}
           <Points value={state.points} />
           <Link
             className="icon-button bell-button"
@@ -249,6 +251,13 @@ export function Shell() {
             <QrCode size={22} />
           </Link>
         </header>
+        <div className="fipaz-event-switch">
+          <Link to={FIPAZ_HOME}>FIPAZ 2026</Link>
+          <Link to="/">
+            <ArrowUpRight size={14} />
+            Cambiar feria
+          </Link>
+        </div>
         {!online && (
           <div className="offline-banner" role="status">
             <WifiOff size={15} />
