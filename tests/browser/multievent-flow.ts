@@ -2,9 +2,84 @@ import { test, expect, type Page } from '@playwright/test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import QRCode from 'react-qr-code';
+import { PUC_TEST_QR } from '../../src/features/events/catalog';
+// @ts-expect-error JavaScript fixture is shared with the standalone SW test.
+import { setupPucApi } from './puc-api-fixture.mjs';
 const base = '/ferias/gamlp-puc-2026';
 type Prepare = (page: Page, guest?: boolean) => Promise<unknown>;
 export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare = async () => {}) {
+  const originalPrepare = prepare;
+  prepare = async (page, guest) => {
+    const result = await originalPrepare(page, guest);
+    if (mode === 'live') await setupPucApi(page);
+    return result;
+  };
+  if (mode === 'live') {
+    test('GAMLP conectado: fallo, reintento idempotente, edición y progreso separado por cuenta', async ({
+      page,
+    }) => {
+      await prepare(page);
+      const api = await setupPucApi(page);
+      api.failRatings = 1;
+      const target = new URL(PUC_TEST_QR.target);
+      await page.goto(target.pathname + target.search);
+      await page.getByRole('radio', { name: '4 estrellas', exact: true }).check();
+      await page.getByRole('textbox', { name: 'Comentario' }).fill('La información fue clara.');
+      await page.getByRole('button', { name: 'Enviar calificación', exact: true }).click();
+      await expect(page.getByRole('alert')).toContainText('Reintenta');
+      await expect(page.getByRole('heading', { name: '¡Gracias por tu opinión!' })).toHaveCount(0);
+      await page.getByRole('button', { name: 'Enviar calificación', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '¡Gracias por tu opinión!' })).toBeVisible();
+      const writes = api.requests.filter((r: { method: string }) => r.method === 'PUT');
+      expect(writes).toHaveLength(2);
+      expect(writes[0].body.requestKey).toBe(writes[1].body.requestKey);
+      expect(Object.keys(writes[1].body).sort()).toEqual(['comment', 'requestKey', 'stars']);
+      await page.getByRole('button', { name: 'Editar mi calificación' }).click();
+      await page.getByRole('radio', { name: '5 estrellas', exact: true }).check();
+      await page.getByRole('button', { name: 'Actualizar calificación', exact: true }).click();
+      await expect(page.getByRole('heading', { name: '¡Gracias por tu opinión!' })).toBeVisible();
+      expect(api.ratings.size).toBe(1);
+      expect(
+        api.requests.filter((r: { method: string }) => r.method === 'PUT')[2].body.requestKey,
+      ).not.toBe(writes[1].body.requestKey);
+      await page.getByRole('link', { name: 'Perfil', exact: true }).click();
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+      await expect(page.locator('.puc-progress-counts')).toContainText(
+        '1/5 Calificaciones confirmadas',
+      );
+      await page.reload();
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+      api.owner = 'another-user';
+      await page.reload();
+      await expect(page.locator('.puc-progress-counts')).toContainText(
+        '0/5 Calificaciones confirmadas',
+      );
+      await page.goto(base + '/calificar/mercados');
+      await expect(
+        page.getByRole('heading', { name: 'Escanea el QR de este lugar' }),
+      ).toBeVisible();
+      await expect(page.getByRole('radio')).toHaveCount(0);
+    });
+    test('GAMLP conectado: domo sin publicar y sesión ajena a Google no habilitan calificación', async ({
+      page,
+    }) => {
+      await prepare(page);
+      const api = await setupPucApi(page);
+      const { PUC_ISSUED_QRS } = await import('../../src/features/events/issued-qr');
+      const target = new URL(PUC_ISSUED_QRS.find((qr) => qr.slug === 'domo')!.target);
+      await page.goto(target.pathname + target.search);
+      await expect(page.getByRole('alert')).toContainText('todavía no está disponible');
+      await expect(page.getByRole('radio')).toHaveCount(0);
+      expect(api.requests).toHaveLength(0);
+      api.provider = 'password';
+      await page.goto(base + '/escanear');
+      await page.reload();
+      await expect(
+        page.getByRole('heading', { name: 'Inicia sesión para escanear' }),
+      ).toBeVisible();
+      await expect(page.getByRole('button', { name: 'Activar cámara' })).toHaveCount(0);
+    });
+  }
   test('multievento: Google protege cámara y QR directo, conserva el destino y no acredita una lectura como invitado', async ({
     page,
   }) => {
@@ -15,17 +90,19 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     ).toBeVisible();
     await expect(page.getByRole('button', { name: 'Activar cámara', exact: true })).toHaveCount(0);
     await expect(page.getByLabel('Seleccionar imagen de un QR')).toHaveCount(0);
-    await page.goto(base + '/calificar/mercados?via=qr');
+    const trial = new URL(PUC_TEST_QR.target);
+    await page.goto(trial.pathname + trial.search);
     await expect(
       page.getByRole('heading', { name: 'Inicia sesión para calificar', exact: true }),
     ).toBeVisible();
     expect(await page.evaluate(() => localStorage.getItem('fexpo-puc-scans-v1'))).toBeNull();
     if (mode === 'live') {
       await page.getByRole('button', { name: 'Continuar con Google', exact: true }).click();
-      await expect(page).toHaveURL(base + '/calificar/mercados?via=qr');
+      await expect(page).toHaveURL(base + '/calificar/mercados');
       await expect(page.locator('.puc-rating-target')).toContainText('Unidad de Mercados');
       await page.getByRole('link', { name: 'Perfil', exact: true }).click();
-      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
+      await expect(page.locator('.puc-progress-counts')).toContainText('1/5 QR confirmados');
     } else
       await expect(
         page.getByRole('button', { name: 'Continuar con Google', exact: true }),
@@ -79,7 +156,7 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
       await prepare(page);
       const qr = renderToStaticMarkup(
         createElement(QRCode, {
-          value: 'https://app.fexpo.lat' + base + '/calificar/tunel-cites',
+          value: PUC_TEST_QR.shortUrl,
           size: 360,
         }),
       );
@@ -118,18 +195,18 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
       );
       await page.goto(base + '/escanear');
       await page.getByRole('button', { name: 'Activar cámara', exact: true }).click();
-      await expect(page).toHaveURL(base + '/calificar/tunel-cites');
+      await expect(page).toHaveURL(base + '/calificar/mercados');
       expect(await page.evaluate(() => (window as any).__realQrTrackStops)).toBe(1);
       await page.getByRole('radio', { name: '5 estrellas', exact: true }).check();
       await page.getByRole('link', { name: 'Perfil', exact: true }).click();
       await expect(
-        page.getByRole('progressbar', { name: 'Lugares con QR escaneado' }),
-      ).toHaveAttribute('aria-valuenow', '1');
+        page.getByRole('progressbar', { name: 'Lugares con calificación confirmada' }),
+      ).toHaveAttribute('aria-valuenow', '0');
       await expect(page.locator('.puc-progress-counts')).toContainText(
         '0/5 Calificaciones confirmadas',
       );
       await page.reload();
-      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
       await expect(page.getByRole('link', { name: 'Cambiar feria', exact: true })).toBeVisible();
     });
   if (mode === 'live')
@@ -160,7 +237,7 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
       await upload.setInputFiles({ name: 'qr.png', mimeType: 'image/png', buffer: qr });
       await expect(page).toHaveURL(base + '/calificar/publicidad');
       await page.getByRole('link', { name: 'Perfil', exact: true }).click();
-      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
+      await expect(page.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
     });
   if (mode === 'local')
     test('multievento: sin WebGL conserva el punto y ofrece el plano 2D', async ({ page }) => {
@@ -269,7 +346,7 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     await expect(page.locator('.fair-header .fexpo-brand')).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Cambiar feria', exact: true })).toHaveCount(0);
     await page.getByRole('link', { name: 'Recorrido', exact: true }).last().click();
-    await expect(page.locator('.puc-experience-list li')).toHaveCount(5);
+    await expect(page.locator('.puc-experience-list li')).toHaveCount(6);
     await expect(page.locator('.fair-shell')).not.toContainText('FIPAZ');
     await page.getByRole('link', { name: 'Mapa', exact: true }).last().click();
     await expect(page.locator('[data-puc-lot]')).toHaveCount(6);
@@ -285,7 +362,11 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-dome-count', '1');
     await page.reload();
     await expect(page.locator('.puc-map-selection')).toContainText('Competitividad e Inversiones');
-    expect(paths.filter((p) => /^\/events\//.test(p))).toEqual([]);
+    await page
+      .getByRole('button', { name: 'Punto 6: Domo de Ciudad Productiva', exact: true })
+      .click();
+    await expect(page.locator('.puc-map-selection')).toContainText('Domo de Ciudad Productiva');
+    expect(paths.filter((p) => /\/stands|\/me\/gamification/.test(p))).toEqual([]);
   });
   test('multievento: QR directo conserva punto y borrador, Google obligatorio, sin opinión falsa', async ({
     page,
@@ -308,7 +389,13 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
       return;
     }
     await page.getByRole('button', { name: 'Continuar con Google', exact: true }).click();
-    await expect(page.locator('.puc-rating-target')).toContainText('Túnel de los CITEs');
+    await expect(
+      page.getByRole('heading', { name: 'Escanea el QR de este lugar', exact: true }),
+    ).toBeVisible();
+    await expect(page.getByRole('radio')).toHaveCount(0);
+    const target = new URL(PUC_TEST_QR.target);
+    await page.goto(target.pathname + target.search);
+    await expect(page.locator('.puc-rating-target')).toContainText('Unidad de Mercados');
     await page.getByRole('radio', { name: '4 estrellas', exact: true }).check();
     await page
       .getByRole('textbox', { name: 'Comentario' })
@@ -318,10 +405,10 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     ).toBeEnabled();
     if (mode === 'live') {
       await expect(page.locator('.puc-signed-in')).toContainText('Ana Visitante');
-      await expect(page).toHaveURL(base + '/calificar/tunel-cites');
+      await expect(page).toHaveURL(base + '/calificar/mercados');
       await expect(page.getByRole('radio', { name: '4 estrellas', exact: true })).toBeChecked();
       await page.getByRole('button', { name: 'Enviar calificación', exact: true }).click();
-      await expect(page.getByRole('alert')).toContainText('El envío todavía no está habilitado');
+      await expect(page.getByRole('heading', { name: '¡Gracias por tu opinión!' })).toBeVisible();
     } else
       await expect(
         page.getByRole('button', { name: 'Continuar con Google', exact: true }),
@@ -331,10 +418,13 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     await expect(page.getByRole('textbox', { name: 'Comentario' })).toHaveValue(
       'Me gustó el recorrido de los CITEs.',
     );
-    await page.goto(base + '/calificar/mercados');
+    await page.goto(base + '/calificar/tunel-cites?via=qr');
+    await expect(
+      page.getByRole('heading', { name: 'Escanea el QR de este lugar', exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole('radio', { checked: true })).toHaveCount(0);
-    await expect(page.getByRole('textbox', { name: 'Comentario' })).toBeEmpty();
-    expect(writes.filter((url) => url.includes('/api/backend'))).toEqual([]);
+    await expect(page.getByRole('textbox', { name: 'Comentario' })).toHaveCount(0);
+    expect(writes.filter((url) => url.includes('my-rating'))).toHaveLength(1);
     await expect(page.getByRole('heading', { name: '¡Gracias por tu opinión!' })).toHaveCount(0);
   });
   test('multievento: lector abre solo los enlaces correctos y superficies compactas', async ({
@@ -343,16 +433,17 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     await prepare(page);
     await page.goto(base + '/escanear');
     if (mode === 'live') {
-      await page
-        .getByRole('textbox', { name: 'También puedes pegar el enlace del QR' })
-        .fill('https://otro.example/calificar');
-      await page.getByRole('button', { name: 'Abrir experiencia' }).click();
-      await expect(page.getByRole('alert')).toContainText('no corresponde');
-      await page
-        .getByRole('textbox', { name: 'También puedes pegar el enlace del QR' })
-        .fill('https://app.fexpo.lat' + base + '/calificar/publicidad');
-      await page.getByRole('button', { name: 'Abrir experiencia' }).click();
-      await expect(page.locator('.puc-rating-target')).toContainText('Unidad Publicidad');
+      await expect(page.locator('.puc-qr-link')).toHaveCount(0);
+      await expect(page.getByRole('textbox')).toHaveCount(0);
+      await page.goto(base + '/calificar/publicidad?via=qr');
+      await expect(
+        page.getByRole('heading', { name: 'Escanea el QR de este lugar', exact: true }),
+      ).toBeVisible();
+      await expect(page.getByRole('radio')).toHaveCount(0);
+      await expect(page.getByRole('link', { name: 'Escanear QR', exact: true })).toHaveAttribute(
+        'href',
+        base + '/escanear?point=publicidad',
+      );
     } else {
       await expect(
         page.getByRole('heading', { name: 'Inicia sesión para escanear', exact: true }),
