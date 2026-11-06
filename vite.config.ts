@@ -62,7 +62,7 @@ export default defineConfig(({ mode }) => {
             },
           ],
           shortcuts: [
-            { name: 'Explorar el mapa', url: '/map?reference=2026-11-04' },
+            { name: 'Elegir feria', url: '/' },
             { name: 'Mi código QR', url: '/my-qr' },
           ],
         },
