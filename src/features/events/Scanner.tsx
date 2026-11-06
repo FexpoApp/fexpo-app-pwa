@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Camera, ScanLine, ArrowRight, ImagePlus } from 'lucide-react';
-import { PUC_BASE, resolvePucQr } from './catalog';
-import { markPucScanned } from './progress';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Camera, ScanLine, ImagePlus } from 'lucide-react';
+import { useLive } from '@/state/live';
+import { PUC_BASE, resolvePucQr, pucExperience } from './catalog';
+import { grantPucRatingAccess } from './scan-access';
 type Detector = { detect: (source: HTMLVideoElement) => Promise<{ rawValue: string }[]> };
 type DetectorConstructor = {
   new (options: { formats: string[] }): Detector;
@@ -10,13 +11,14 @@ type DetectorConstructor = {
 };
 export function PucScannerPage() {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const expected = pucExperience(params.get('point') || '');
   const video = useRef<HTMLVideoElement>(null);
   const stream = useRef<MediaStream | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const generation = useRef(0);
   const [running, setRunning] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [value, setValue] = useState('');
   const [error, setError] = useState('');
   function stop() {
     generation.current++;
@@ -39,7 +41,7 @@ export function PucScannerPage() {
       document.removeEventListener('visibilitychange', hide);
     };
   }, []);
-  function open(raw: string, scanned = false) {
+  function open(raw: string, source: 'camera' | 'image') {
     const path = resolvePucQr(raw, window.location.origin);
     if (!path) {
       setError(
@@ -47,9 +49,14 @@ export function PucScannerPage() {
       );
       return false;
     }
-    if (scanned) {
-      const slug = path.split('/calificar/')[1];
-      if (slug) markPucScanned(slug);
+    const slug = new URL(path, window.location.origin).pathname.split('/calificar/')[1];
+    if (expected && slug !== expected.slug) {
+      setError(`Este código no corresponde a ${expected.shortName}. Escanea el QR de ese lugar.`);
+      return false;
+    }
+    if (slug && !grantPucRatingAccess(slug, useLive.getState().user?.id, source)) {
+      setError('No pudimos conservar esta lectura. Reintenta antes de calificar.');
+      return false;
     }
     stop();
     navigate(path);
@@ -75,7 +82,7 @@ export function PucScannerPage() {
       const canvas = document.createElement('canvas');
       const context = canvas.getContext('2d', { willReadFrequently: true });
       if (!navigator.mediaDevices?.getUserMedia)
-        throw new Error('No se pudo acceder a la cámara. Puedes pegar el enlace del QR.');
+        throw new Error('No se pudo acceder a la cámara. Puedes seleccionar una imagen del QR.');
       const media = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: { ideal: 'environment' } },
         audio: false,
@@ -114,7 +121,7 @@ export function PucScannerPage() {
             })?.data;
           }
           if (generation.current !== request) return;
-          if (raw && open(raw, true)) return;
+          if (raw && open(raw, 'camera')) return;
         } catch {
           if (generation.current === request) {
             stop();
@@ -130,10 +137,10 @@ export function PucScannerPage() {
       stop();
       setError(
         e instanceof DOMException && e.name === 'NotAllowedError'
-          ? 'Permite el acceso a la cámara o pega el enlace del QR.'
+          ? 'Permite el acceso a la cámara o selecciona una imagen del QR.'
           : e instanceof Error && e.name === 'Error'
             ? e.message
-            : 'No se pudo abrir la cámara. Usa la cámara del teléfono o pega el enlace del QR.',
+            : 'No se pudo abrir la cámara. Reintenta o selecciona una imagen del QR.',
       );
     }
   }
@@ -162,7 +169,7 @@ export function PucScannerPage() {
       });
       if (!result)
         setError('No encontramos un QR legible en la imagen. Acércate y evita reflejos.');
-      else open(result.data, true);
+      else open(result.data, 'image');
     } catch {
       if (generation.current === request)
         setError('No pudimos leer esa imagen. Prueba con una foto más nítida.');
@@ -174,7 +181,11 @@ export function PucScannerPage() {
   return (
     <section className="puc-scanner-page">
       <h1>Escanea un QR</h1>
-      <p>Abre la experiencia que visitaste y comparte tu opinión.</p>
+      <p>
+        {expected
+          ? `Lee el código de ${expected.shortName} para calificar.`
+          : 'Lee el código de la experiencia que visitaste para compartir tu opinión.'}
+      </p>
       <div className={`puc-camera ${running ? 'running' : ''}`}>
         <video ref={video} playsInline muted aria-label="Vista de la cámara para leer QR" />
         {!running && (
@@ -218,31 +229,8 @@ export function PucScannerPage() {
           {error}
         </p>
       )}
-      <form
-        className="puc-qr-link"
-        onSubmit={(event) => {
-          event.preventDefault();
-          open(value);
-        }}
-      >
-        <label>
-          También puedes pegar el enlace del QR
-          <input
-            type="text"
-            inputMode="url"
-            placeholder="https://app.fexpo.lat/…"
-            value={value}
-            onChange={(event) => setValue(event.target.value)}
-            required
-          />
-        </label>
-        <button className="button secondary" type="submit">
-          Abrir experiencia
-          <ArrowRight size={17} />
-        </button>
-      </form>
       <Link className="button ghost" to={PUC_BASE + '/recorrido'}>
-        Ver los cinco puntos del recorrido
+        Ver los seis puntos del recorrido
       </Link>
     </section>
   );
