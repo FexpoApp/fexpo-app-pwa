@@ -87,7 +87,7 @@ function RatingScanGate({ point }: { point: PucExperience }) {
     if (!external || !owner) return;
     if (
       hasPucRatingAccess(point.slug, owner) ||
-      grantPucRatingAccess(point.slug, owner, 'external-qr')
+      grantPucRatingAccess(point.slug, owner, 'external-qr', params.get('qr'))
     ) {
       setAccess(true);
       const next = new URLSearchParams(params);

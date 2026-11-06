@@ -47,7 +47,11 @@ export interface AuthUserDto {
   id: string;
   displayName: string | null;
   avatarUrl: string | null;
-  authProvider?: 'google' | 'password';
+  /**
+   * Proveedor que publica el servidor en GET /auth/me (`app_users.auth_provider`).
+   * Va en el nivel superior de la respuesta, no dentro de `profile`.
+   */
+  authProvider?: 'google' | 'internal' | 'external';
 }
 
 export interface ExperienceDto {
@@ -103,6 +107,9 @@ export interface ExperienceScanResultDto {
     lastScannedAt: string;
   };
   firstScan: boolean;
+  /** Comprobante que PUT my-rating exige. Estable entre relecturas. */
+  scanReceipt: string;
+  receiptExpiresAt: string;
   progress: ExperienceSummaryDto;
 }
 export interface ExperienceRatingResultDto {

@@ -14,6 +14,11 @@ import {
   ensurePucScan,
 } from '@/features/events/server';
 import { grantPucRatingAccess } from '@/features/events/scan-access';
+
+// Codigos realmente emitidos (docs/data/gamlp-issued-qr-2026-11-06.json).
+const QR_MERCADOS = 'mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732';
+const QR_DOMO = 'domo_e66180ffcba84f48874a3a85da52fc74';
+const RECEIPT = '66666666-6666-4666-8666-666666666666';
 const owner = 'qa-owner';
 const rating = {
   id: 'qa-rating',
@@ -61,6 +66,8 @@ beforeEach(() => {
         data: {
           scan: { experienceId: rating.experienceId, lastScannedAt: rating.createdAt },
           firstScan: true,
+          scanReceipt: RECEIPT,
+          receiptExpiresAt: '2026-11-06T22:00:00Z',
           progress: { ...summary, ratedCount: 0 },
         },
       };
@@ -70,7 +77,7 @@ beforeEach(() => {
 });
 describe('Calificaciones GAMLP conectadas al contrato publicado', () => {
   it('resuelve UUID del catálogo, registra lectura y confirma solo la respuesta guardada', async () => {
-    grantPucRatingAccess('mercados', owner, 'camera');
+    grantPucRatingAccess('mercados', owner, 'camera', QR_MERCADOS);
     await syncPucProgress(owner);
     await ensurePucScan('mercados', owner);
     const result = await savePucRating('mercados', owner, 4, 'Bien');
@@ -78,12 +85,25 @@ describe('Calificaciones GAMLP conectadas al contrato publicado', () => {
     expect(usePucServer.getState().progress?.progress.ratedCount).toBe(1);
     const mutation = handler.mock.calls.find(([p]) => p.endsWith('/my-rating'))!;
     expect(mutation[0]).toContain(catalog.experiences[0].id);
-    expect(mutation[1].body).toEqual({ stars: 4, comment: 'Bien', requestKey: expect.any(String) });
+    // El comprobante sale de la lectura registrada en el servidor, no del navegador.
+    expect(mutation[1].body).toEqual({
+      stars: 4,
+      comment: 'Bien',
+      scanReceipt: RECEIPT,
+      requestKey: expect.any(String),
+    });
     expect(mutation[1].body).not.toHaveProperty('userId');
-    expect(handler.mock.calls.filter(([p]) => p.endsWith('/scans'))).toHaveLength(1);
+    const scan = handler.mock.calls.filter(([p]) => p.endsWith('/scans'));
+    expect(scan).toHaveLength(1);
+    // El código del QR impreso viaja con la lectura: el servidor lo exige.
+    expect(scan[0][1].body).toEqual({
+      qrCode: QR_MERCADOS,
+      source: 'camera',
+      requestKey: expect.any(String),
+    });
   });
   it('conserva clave de idempotencia tras un fallo y cambia clave si cambia el contenido', async () => {
-    grantPucRatingAccess('mercados', owner, 'external-qr');
+    grantPucRatingAccess('mercados', owner, 'external-qr', QR_MERCADOS);
     const defaultHandler = handler.getMockImplementation()!;
     let failures = 2;
     handler.mockImplementation(async (...args) => {
@@ -102,13 +122,15 @@ describe('Calificaciones GAMLP conectadas al contrato publicado', () => {
   });
   it('impide enviar sin lectura y no inventa un UUID para el domo todavía no publicado', async () => {
     await expect(savePucRating('mercados', owner, 4, '')).rejects.toThrow('Escanea');
-    grantPucRatingAccess('domo', owner, 'image');
+    grantPucRatingAccess('domo', owner, 'image', QR_DOMO);
     await expect(savePucRating('domo', owner, 4, '')).rejects.toThrow('todavía no está disponible');
     expect(handler.mock.calls.filter(([, o]) => o?.method === 'PUT')).toHaveLength(0);
   });
   it('rechaza otras cuentas y respuestas de una sesión anterior', async () => {
+    // `internal` es lo que guarda app_users para una cuenta de correo y
+    // contraseña; el servidor nunca publica 'password'.
     useLive.setState({
-      user: { id: owner, displayName: 'QA', avatarUrl: null, authProvider: 'password' },
+      user: { id: owner, displayName: 'QA', avatarUrl: null, authProvider: 'internal' },
     });
     await expect(syncPucProgress(owner)).rejects.toThrow('Google');
     useLive.setState({

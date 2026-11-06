@@ -49,12 +49,15 @@ export function PucScannerPage() {
       );
       return false;
     }
-    const slug = new URL(path, window.location.origin).pathname.split('/calificar/')[1];
+    const resolved = new URL(path, window.location.origin);
+    const slug = resolved.pathname.split('/calificar/')[1];
     if (expected && slug !== expected.slug) {
       setError(`Este código no corresponde a ${expected.shortName}. Escanea el QR de ese lugar.`);
       return false;
     }
-    if (slug && !grantPucRatingAccess(slug, useLive.getState().user?.id, source)) {
+    // resolvePucQr conserva el `qr` del código impreso: es lo que el servidor
+    // exige para registrar la lectura.
+    if (slug && !grantPucRatingAccess(slug, useLive.getState().user?.id, source, resolved.searchParams.get('qr'))) {
       setError('No pudimos conservar esta lectura. Reintenta antes de calificar.');
       return false;
     }

@@ -136,7 +136,9 @@ export async function ensurePucScan(slug: string, owner: string) {
       {
         auth: true,
         method: 'POST',
-        body: { source: scan.source, requestKey: scan.requestKey },
+        // `qrCode` es el identificador del QR impreso: el servidor comprueba
+        // que esté vigente y que sea de este evento y punto.
+        body: { qrCode: scan.qrCode, source: scan.source, requestKey: scan.requestKey },
       },
     );
     assertOwner(owner, generation);
@@ -172,8 +174,12 @@ export async function savePucRating(slug: string, owner: string, stars: number, 
       'Elige de 1 a 5 estrellas y un comentario de hasta 1.000 caracteres.',
     );
   const ids = await pointIds(slug);
-  await ensurePucScan(slug, owner);
+  // El comprobante sale de la lectura registrada en el servidor. Es estable
+  // entre relecturas, así que un reintento o una recarga obtienen el mismo.
+  const { scanReceipt } = await ensurePucScan(slug, owner);
   assertOwner(owner, generation);
+  if (!scanReceipt)
+    throw new ApiError('QR_SCAN_REQUIRED', 'Escanea nuevamente el QR de este lugar.');
   const payload = JSON.stringify({ stars, comment: comment.trim() });
   const key = `fexpo-rating-request-v1:${PUC_SLUG}:${encodeURIComponent(owner)}:${slug}`;
   let operation: { payload: string; requestKey: string } | null = null;
@@ -194,6 +200,7 @@ export async function savePucRating(slug: string, owner: string, stars: number, 
         body: {
           stars,
           ...(comment.trim() ? { comment: comment.trim() } : {}),
+          scanReceipt,
           requestKey: operation.requestKey,
         },
       },
