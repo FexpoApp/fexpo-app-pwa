@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Home, Map, Route, ScanLine, UserRound, CalendarDays, Download, X } from 'lucide-react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Brand } from '@/ui/Brand';
 import { useTheme } from '@/ui/theme';
 import { LIVE } from '@/services/config';
 import { bootstrapAccount } from '@/state/live';
 import { PUC_BASE } from './catalog';
+import { resolvePucEvent, syncPucProgress } from './server';
+import { useLive } from '@/state/live';
 import './events.css';
 interface InstallPrompt extends Event {
   prompt: () => Promise<void>;
@@ -16,12 +17,28 @@ export function FairShell() {
   useTheme();
   const { pathname } = useLocation();
   const inFair = pathname.startsWith(PUC_BASE);
+  const owner = useLive((s) =>
+    s.status === 'signedIn' && s.user?.authProvider === 'google' ? s.user.id : null,
+  );
+  useEffect(() => {
+    if (!LIVE || !inFair) return;
+    void resolvePucEvent().catch(() => {});
+    if (!owner) return;
+    const refresh = () => {
+      if (!document.hidden && navigator.onLine) void syncPucProgress(owner).catch(() => {});
+    };
+    refresh();
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, [inFair, owner]);
   const [install, setInstall] = useState<InstallPrompt | null>(null);
   const [installHelp, setInstallHelp] = useState(false);
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
   useEffect(() => {
     if (LIVE) void bootstrapAccount();
   }, []);
@@ -123,6 +140,11 @@ export function FairShell() {
               <span className="municipal-wordmark">
                 Secretaría Municipal de<strong>CIUDAD PRODUCTIVA</strong>
               </span>
+              <img
+                className="municipal-lapaz"
+                src="/assets/events/ciudad-productiva/la-paz-logo.png"
+                alt="La Paz, Capital del Cielo"
+              />
             </Link>
           ) : (
             <>
@@ -187,18 +209,6 @@ export function FairShell() {
             </NavLink>
           ))}
         </nav>
-        {needRefresh && (
-          <div className="install-banner">
-            <span>Hay una nueva versión de FEXPO.</span>
-            <button onClick={() => void updateServiceWorker(true)}>Actualizar</button>
-            <button
-              aria-label="Cerrar aviso de actualización"
-              onClick={() => setNeedRefresh(false)}
-            >
-              <X size={17} />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

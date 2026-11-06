@@ -10,6 +10,12 @@
     "scope": "Solo la sección de la Secretaría Municipal de Ciudad Productiva"
   },
   "generalQr": "https://app.fexpo.lat/ferias/gamlp-puc-2026",
+  "approvedTrialQr": {
+    "slug": "mercados",
+    "code": "mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732",
+    "shortUrl": "https://is.gd/fexpo_gamlp_mercados",
+    "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/mercados?via=qr&qr=mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732"
+  },
   "experiences": [
     {
       "slug": "mercados",
@@ -21,7 +27,8 @@
       "mapLots": [
         "1"
       ],
-      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/mercados?via=qr"
+      "qrUrl": "https://is.gd/fexpo_gamlp_mercados",
+      "qrCode": "mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732"
     },
     {
       "slug": "tunel-mercados",
@@ -33,7 +40,8 @@
       "mapLots": [
         "2"
       ],
-      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-mercados?via=qr"
+      "qrUrl": "https://is.gd/fexpo_gamlp_nuevosmercados",
+      "qrCode": "tunel-mercados_a8ca7ec5dbd646b89963c4307e796b3c"
     },
     {
       "slug": "desarrollo-economico",
@@ -46,7 +54,8 @@
         "3A",
         "3B"
       ],
-      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/desarrollo-economico?via=qr"
+      "qrUrl": "https://is.gd/fexpo_gamlp_desarrollo",
+      "qrCode": "desarrollo-economico_eef7151ad12741b18d500b467b8e3c24"
     },
     {
       "slug": "tunel-cites",
@@ -58,7 +67,8 @@
       "mapLots": [
         "4"
       ],
-      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-cites?via=qr"
+      "qrUrl": "https://is.gd/fexpo_gamlp_cites",
+      "qrCode": "tunel-cites_248f5a6c8d7c428897501d2444214c82"
     },
     {
       "slug": "publicidad",
@@ -70,7 +80,19 @@
       "mapLots": [
         "5"
       ],
-      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/publicidad?via=qr"
+      "qrUrl": "https://is.gd/fexpo_gamlp_publicidad",
+      "qrCode": "publicidad_2698f2563ac94bacadc9a3af149e52fd"
+    },
+    {
+      "slug": "domo",
+      "order": 6,
+      "name": "Domo de Ciudad Productiva",
+      "shortName": "Domo central",
+      "type": "domo",
+      "description": "Visita el domo ubicado en el centro de la sección de Ciudad Productiva y comparte tu experiencia. Su visita es independiente del recorrido de las cinco paradas exteriores.",
+      "mapLots": [],
+      "qrUrl": "https://is.gd/fexpo_gamlp_domo",
+      "qrCode": "domo_e66180ffcba84f48874a3a85da52fc74"
     }
   ],
   "map": {
@@ -148,13 +170,54 @@
     "dome": {
       "x": 450,
       "y": 425,
-      "radius": 110
+      "radius": 110,
+      "experienceSlug": "domo"
     }
   },
   "notes": [
     "UUID a generar en base de datos; no reutilizar el UUID del evento FIPAZ.",
-    "El domo no es una sexta experiencia.",
+    "El domo es la sexta experiencia calificable, en el centro y con visita libre.",
+    "Google y lectura del QR del punto obligatorios; integrar comprobante de servidor antes del guardado.",
     "Coordenadas en unidades del plano SVG; no representan GPS ni una escala geográfica.",
-    "Las horas de apertura/cierre no están definidas por estas fechas de calendario."
+    "Las horas de apertura/cierre no están definidas por estas fechas de calendario.",
+    "Se emitieron los seis enlaces cortos y se creó un Word de seis páginas con QR de opinión. El QR del domo queda preparado, pero el servidor solo publica cinco experiencias hasta aplicar su migración."
+  ],
+  "issuedQrs": [
+    {
+      "slug": "mercados",
+      "code": "mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732",
+      "shortUrl": "https://is.gd/fexpo_gamlp_mercados",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/mercados?via=qr&qr=mercados_3f7d1a9c6e4b48a5b1c2d0ef9a65b732"
+    },
+    {
+      "slug": "tunel-mercados",
+      "code": "tunel-mercados_a8ca7ec5dbd646b89963c4307e796b3c",
+      "shortUrl": "https://is.gd/fexpo_gamlp_nuevosmercados",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-mercados?via=qr&qr=tunel-mercados_a8ca7ec5dbd646b89963c4307e796b3c"
+    },
+    {
+      "slug": "desarrollo-economico",
+      "code": "desarrollo-economico_eef7151ad12741b18d500b467b8e3c24",
+      "shortUrl": "https://is.gd/fexpo_gamlp_desarrollo",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/desarrollo-economico?via=qr&qr=desarrollo-economico_eef7151ad12741b18d500b467b8e3c24"
+    },
+    {
+      "slug": "tunel-cites",
+      "code": "tunel-cites_248f5a6c8d7c428897501d2444214c82",
+      "shortUrl": "https://is.gd/fexpo_gamlp_cites",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-cites?via=qr&qr=tunel-cites_248f5a6c8d7c428897501d2444214c82"
+    },
+    {
+      "slug": "publicidad",
+      "code": "publicidad_2698f2563ac94bacadc9a3af149e52fd",
+      "shortUrl": "https://is.gd/fexpo_gamlp_publicidad",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/publicidad?via=qr&qr=publicidad_2698f2563ac94bacadc9a3af149e52fd"
+    },
+    {
+      "slug": "domo",
+      "code": "domo_e66180ffcba84f48874a3a85da52fc74",
+      "shortUrl": "https://is.gd/fexpo_gamlp_domo",
+      "target": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/domo?via=qr&qr=domo_e66180ffcba84f48874a3a85da52fc74"
+    }
   ]
 }

@@ -1147,6 +1147,14 @@
 .puc-google-gate > p {
   color: var(--muted);
 }
+.puc-scan-required {
+  max-width: 470px;
+  margin: 16px auto;
+}
+.puc-scan-required > .button {
+  width: 100%;
+  margin-top: 10px;
+}
 .google-login-compact {
   margin: 16px 0;
 }
@@ -1217,6 +1225,35 @@
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.02em;
+}
+.municipal-brand .municipal-lapaz {
+  width: 54px;
+  height: 55px;
+  max-width: none;
+  margin-left: 16px;
+  flex: 0 0 54px;
+}
+@media (max-width: 359px) {
+  .municipal-header {
+    padding-inline: 8px;
+  }
+  .municipal-crest {
+    width: 45px;
+    flex-basis: 45px;
+  }
+  .municipal-wordmark {
+    margin-left: 5px;
+    font-size: 9px;
+  }
+  .municipal-wordmark strong {
+    font-size: 12px;
+  }
+  .municipal-brand .municipal-lapaz {
+    width: 43px;
+    height: 46px;
+    flex-basis: 43px;
+    margin-left: 8px;
+  }
 }
 .municipal-card-photo {
   display: block;
@@ -1438,6 +1475,11 @@
   object-fit: contain;
   background: #eef0e2;
   padding: 14px;
+}
+.puc-experience-photo.is-banner img {
+  aspect-ratio: auto;
+  height: auto;
+  object-fit: contain;
 }
 .puc-experience-photo figcaption {
   position: absolute;

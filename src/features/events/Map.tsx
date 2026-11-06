@@ -1,10 +1,10 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch';
-import { Plus, Minus, RotateCcw, Star, ArrowUpRight } from 'lucide-react';
+import { Plus, Minus, RotateCcw, ScanLine, ArrowUpRight } from 'lucide-react';
 import type { CampusCamera } from '@/features/campus/IndoorScene';
 import { PUC_PLAN, PUC_LOTS, PUC_LOT_EXPERIENCES, PUC_DOME } from './geometry';
-import { PUC_EXPERIENCES, pucExperience, experienceUrl, ratingUrl } from './catalog';
+import { PUC_BASE, PUC_EXPERIENCES, pucExperience, experienceUrl } from './catalog';
 import '@/features/campus/campus.css';
 const Scene = lazy(() => import('@/features/campus/IndoorScene'));
 function PlanControls({ camera }: { camera: React.RefObject<CampusCamera | null> }) {
@@ -166,8 +166,28 @@ export function PucMapPage() {
                     </g>
                   );
                 })}
-                <g aria-label="Domo central">
-                  <circle cx="450" cy="425" r="110" fill="#fff" stroke="#132d46" strokeWidth="4" />
+                <g
+                  aria-label="Punto 6: Domo de Ciudad Productiva"
+                  role="button"
+                  tabIndex={0}
+                  data-puc-dome
+                  data-selected={point?.slug === 'domo'}
+                  onClick={() => change('point', 'domo')}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      change('point', 'domo');
+                    }
+                  }}
+                >
+                  <circle
+                    cx="450"
+                    cy="425"
+                    r="110"
+                    fill={point?.slug === 'domo' ? '#d5f24a' : '#fff'}
+                    stroke="#132d46"
+                    strokeWidth={point?.slug === 'domo' ? 6 : 4}
+                  />
                   <path
                     d="m350 452 45-96h110l45 96M395 356l55 115 55-115M350 452h200M395 356l55-38 55 38"
                     fill="none"
@@ -183,7 +203,7 @@ export function PucMapPage() {
                     fontSize="32"
                     fill="#132d46"
                   >
-                    Domo
+                    6 · Domo
                   </text>
                 </g>
                 <text
@@ -254,6 +274,21 @@ export function PucMapPage() {
         {mode === '3d' && (
           <div className="indoor-markers">
             {PUC_EXPERIENCES.map((p) => {
+              if (p.type === 'domo')
+                return (
+                  <button
+                    key={p.slug}
+                    className="puc-3d-label"
+                    data-plan-x="450"
+                    data-plan-y="425"
+                    data-elevation="4.7"
+                    onClick={() => change('point', p.slug)}
+                    aria-label={`Punto ${p.order}: ${p.name}`}
+                  >
+                    <b>{p.order}</b>
+                    {p.shortName}
+                  </button>
+                );
               const i = PUC_LOT_EXPERIENCES.indexOf(p.slug as (typeof PUC_LOT_EXPERIENCES)[number]);
               const l = PUC_LOTS[i];
               return (
@@ -271,9 +306,6 @@ export function PucMapPage() {
                 </button>
               );
             })}
-            <span className="puc-3d-label" data-plan-x="450" data-plan-y="425" data-elevation="4.7">
-              Domo
-            </span>
             <span className="puc-3d-label" data-plan-x="690" data-plan-y="835">
               ↑ Ingreso
             </span>
@@ -310,16 +342,16 @@ export function PucMapPage() {
               Ver experiencia
               <ArrowUpRight size={15} />
             </Link>
-            <Link className="button puc-primary" to={ratingUrl(point.slug)}>
-              <Star size={16} />
-              Calificar
+            <Link className="button puc-primary" to={PUC_BASE + '/escanear?point=' + point.slug}>
+              <ScanLine size={16} />
+              Escanear QR
             </Link>
           </div>
         </div>
       ) : (
         <p className="puc-small-note">Toca una carpa o un túnel para conocer la experiencia.</p>
       )}
-      <div className="puc-map-key" aria-label="Cinco puntos del recorrido">
+      <div className="puc-map-key" aria-label="Seis puntos del recorrido">
         {PUC_EXPERIENCES.map((p) => (
           <button
             key={p.slug}

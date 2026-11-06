@@ -45,4 +45,11 @@ export const PUC_CONTENT: Record<
       'El recorrido concluye en la carpa de la Unidad Publicidad, junto a la salida. Escanea el último QR y valora esta quinta experiencia antes de finalizar tu visita.',
     location: 'Salida · Carpa inferior izquierda',
   },
+  domo: {
+    image: PUC_ASSETS.banner,
+    teaser: 'Una experiencia en el corazón de Ciudad Productiva.',
+    detail:
+      'El domo ocupa el centro del recinto. Puedes visitarlo durante tu recorrido; es una sexta experiencia independiente de las carpas y pasajes exteriores. Para compartir tu opinión, escanea su QR cuando esté disponible.',
+    location: 'Centro del recinto · Visita libre',
+  },
 };

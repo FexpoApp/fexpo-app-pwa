@@ -7,7 +7,6 @@ import {
   MapPin,
   Route,
   ScanLine,
-  Star,
   ChevronRight,
   LogOut,
   CalendarDays,
@@ -22,13 +21,14 @@ import {
   FAIRS,
   PUC_BASE,
   PUC_EXPERIENCES,
+  PUC_EXPERIENCE_COUNT,
   pucExperience,
   experienceUrl,
-  ratingUrl,
 } from './catalog';
 import { Art, Progress } from '@/ui/components';
 import { PUC_ASSETS, PUC_CONTENT } from './content';
 import { usePucScans } from './progress';
+import { usePucServer, syncPucProgress } from './server';
 
 export function FairSelectionPage() {
   const [query, setQuery] = useState('');
@@ -109,13 +109,18 @@ export function FairSelectionPage() {
 
 export function ExperienceRows({ rich = false }: { rich?: boolean }) {
   const scanned = usePucScans();
+  const owner = useLive((s) => s.user?.id);
+  const confirmed = usePucServer((s) => (s.owner === owner ? s.progress : null));
+  const completed = LIVE
+    ? confirmed?.experiences.filter((p) => p.myRating).map((p) => p.slug) || []
+    : scanned;
   return (
     <ol className={`puc-experience-list ${rich ? 'rich-route' : ''}`}>
       {PUC_EXPERIENCES.map((point) => (
         <li key={point.slug}>
           <Link to={experienceUrl(point.slug)}>
-            <span className={`puc-step ${scanned.includes(point.slug) ? 'is-scanned' : ''}`}>
-              {scanned.includes(point.slug) ? <Check size={17} /> : point.order}
+            <span className={`puc-step ${completed.includes(point.slug) ? 'is-scanned' : ''}`}>
+              {completed.includes(point.slug) ? <Check size={17} /> : point.order}
             </span>
             {rich && (
               <img
@@ -132,8 +137,10 @@ export function ExperienceRows({ rich = false }: { rich?: boolean }) {
               </small>
               {rich && (
                 <span className="route-point-meta">
-                  {point.type === 'tunel' ? 'PASAJE' : 'CARPA'} ·{' '}
-                  {scanned.includes(point.slug) ? 'QR leído' : `PUNTO ${point.order} DE 5`}
+                  {point.type === 'domo' ? 'DOMO' : point.type === 'tunel' ? 'PASAJE' : 'CARPA'} ·{' '}
+                  {scanned.includes(point.slug)
+                    ? 'QR leído'
+                    : `PUNTO ${point.order} DE ${PUC_EXPERIENCE_COUNT}`}
                 </span>
               )}
             </span>
@@ -230,7 +237,7 @@ export function PucRoutePage() {
       <div className="fair-page-heading">
         <div>
           <h1>Tu recorrido</h1>
-          <p>Del ingreso a la salida, en cinco experiencias.</p>
+          <p>Cinco paradas exteriores y una experiencia en el domo central.</p>
         </div>
         <Route size={25} />
       </div>
@@ -241,7 +248,7 @@ export function PucRoutePage() {
       </Link>
       <ExperienceRows rich />
       <p className="puc-small-note">
-        Encuentra el QR al finalizar cada experiencia. El domo está al centro del recinto.
+        Escanea el QR de cada lugar para calificar. El domo se visita desde el centro del recinto.
       </p>
     </section>
   );
@@ -250,17 +257,20 @@ export function PucExperiencePage() {
   const { point: slug = '' } = useParams();
   const point = pucExperience(slug);
   if (!point) return <PucNotFound />;
-  const next = PUC_EXPERIENCES[point.order];
+  const next = point.order < 5 ? PUC_EXPERIENCES[point.order] : undefined;
   return (
     <article className="puc-experience-page">
       <span className="puc-label">
-        {point.type === 'tunel' ? 'PASAJE' : 'CARPA'} · PUNTO {point.order} DE 5
+        {point.type === 'domo' ? 'DOMO' : point.type === 'tunel' ? 'PASAJE' : 'CARPA'} · PUNTO{' '}
+        {point.order} DE {PUC_EXPERIENCE_COUNT}
       </span>
       <div className="puc-experience-title">
         <span className="puc-step">{point.order}</span>
         <h1>{point.name}</h1>
       </div>
-      <figure className={`puc-experience-photo ${PUC_CONTENT[point.slug].art ? 'is-art' : ''}`}>
+      <figure
+        className={`puc-experience-photo ${PUC_CONTENT[point.slug].art ? 'is-art' : ''} ${point.type === 'domo' ? 'is-banner' : ''}`}
+      >
         <img src={PUC_CONTENT[point.slug].image} alt={`Ilustración de ${point.shortName}`} />
         <figcaption>Imagen conceptual</figcaption>
       </figure>
@@ -270,19 +280,29 @@ export function PucExperiencePage() {
         Ubicar en el mapa
         <ArrowUpRight size={17} />
       </Link>
-      <Link className="button puc-primary" to={ratingUrl(point.slug)}>
-        <Star size={19} />
-        Calificar mi experiencia
+      <Link className="button puc-primary" to={PUC_BASE + '/escanear?point=' + point.slug}>
+        <ScanLine size={19} />
+        Escanear para calificar
       </Link>
       <div className="puc-next-point">
-        <small>{next ? 'SIGUIENTE EXPERIENCIA' : 'FINAL DEL RECORRIDO'}</small>
+        <small>
+          {next
+            ? 'SIGUIENTE EXPERIENCIA'
+            : point.type === 'domo'
+              ? 'VISITA LIBRE'
+              : 'FINAL DEL RECORRIDO'}
+        </small>
         {next ? (
           <Link to={experienceUrl(next.slug)}>
             {next.shortName}
             <ArrowRight size={18} />
           </Link>
         ) : (
-          <p>La salida está junto a la carpa de Publicidad.</p>
+          <p>
+            {point.type === 'domo'
+              ? 'El domo es una visita libre en el centro del recinto.'
+              : 'La salida está junto a la carpa de Publicidad. También puedes visitar el domo central.'}
+          </p>
         )}
       </div>
     </article>
@@ -293,6 +313,15 @@ export function PucAccountPage() {
   const user = useLive((s) => s.user);
   const status = useLive((s) => s.status);
   const scanned = usePucScans();
+  const remote = usePucServer((s) => (s.owner === user?.id ? s.progress : null));
+  const remoteError = usePucServer((s) => (s.owner === user?.id ? s.error : ''));
+  const remoteLoading = usePucServer((s) => s.owner === user?.id && s.loading);
+  const catalog = usePucServer((s) => s.catalog);
+  const total = LIVE
+    ? (remote?.progress.totalExperiences ?? catalog?.experiences.length ?? PUC_EXPERIENCE_COUNT)
+    : PUC_EXPERIENCE_COUNT;
+  const scannedCount = LIVE ? (remote?.progress.scannedCount ?? 0) : scanned.length;
+  const ratedCount = LIVE ? (remote?.progress.ratedCount ?? 0) : 0;
   return (
     <section className="puc-account-page">
       <h1>{inFair ? 'Mi perfil' : 'Tu cuenta FEXPO'}</h1>
@@ -308,37 +337,69 @@ export function PucAccountPage() {
           <div className="puc-progress-counts">
             <span>
               <strong>
-                {scanned.length}
-                <small>/5</small>
+                {LIVE && !remote ? '—' : scannedCount}
+                <small>/{total}</small>
               </strong>{' '}
-              QR escaneados
+              {LIVE ? 'QR confirmados' : 'QR escaneados'}
             </span>
             <span>
               <strong>
-                0<small>/5</small>
+                {LIVE && !remote ? '—' : ratedCount}
+                <small>/{total}</small>
               </strong>{' '}
               Calificaciones confirmadas
             </span>
           </div>
-          <Progress value={scanned.length} total={5} label="Lugares con QR escaneado" />
+          <Progress
+            value={LIVE ? ratedCount : scannedCount}
+            total={total}
+            label={LIVE ? 'Lugares con calificación confirmada' : 'Lugares con QR escaneado'}
+          />
           <ol className="puc-progress-points">
-            {PUC_EXPERIENCES.map((point) => (
-              <li key={point.slug}>
-                <Link
-                  to={experienceUrl(point.slug)}
-                  aria-label={`${point.shortName}: ${scanned.includes(point.slug) ? 'QR escaneado' : 'QR pendiente'}, calificación pendiente`}
-                >
-                  <span className={scanned.includes(point.slug) ? 'done' : ''}>
-                    {scanned.includes(point.slug) ? <Check size={15} /> : point.order}
-                  </span>
-                  <small>
-                    {['Mercados', 'Túnel', 'Desarrollo', 'CITEs', 'Publicidad'][point.order - 1]}
-                  </small>
-                </Link>
-              </li>
-            ))}
+            {PUC_EXPERIENCES.map((point) => {
+              const row = remote?.experiences.find((p) => p.slug === point.slug);
+              const done = LIVE ? !!row?.myRating : scanned.includes(point.slug);
+              return (
+                <li key={point.slug}>
+                  <Link
+                    to={experienceUrl(point.slug)}
+                    aria-label={`${point.shortName}: ${LIVE ? (row?.scannedAt ? 'QR confirmado' : 'QR pendiente') : scanned.includes(point.slug) ? 'QR escaneado' : 'QR pendiente'}, ${row?.myRating ? 'calificación confirmada' : 'calificación pendiente'}`}
+                  >
+                    <span className={done ? 'done' : ''}>
+                      {done ? <Check size={15} /> : point.order}
+                    </span>
+                    <small>
+                      {
+                        ['Mercados', 'Túnel', 'Desarrollo', 'CITEs', 'Publicidad', 'Domo'][
+                          point.order - 1
+                        ]
+                      }
+                    </small>
+                  </Link>
+                </li>
+              );
+            })}
           </ol>
-          <p>QR leídos en este dispositivo. Un borrador aún no cuenta como calificación.</p>
+          <p>
+            {LIVE
+              ? 'Avance de tu cuenta confirmado por el servidor.'
+              : 'QR leídos en este dispositivo. Un borrador aún no cuenta como calificación.'}
+          </p>
+          {LIVE && catalog && !catalog.experiences.some((p) => p.slug === 'domo') && (
+            <p>El domo estará disponible para calificar próximamente.</p>
+          )}
+          {remoteLoading && <p role="status">Consultando tu avance…</p>}
+          {remoteError && (
+            <>
+              <p role="alert">{remoteError}</p>
+              <button
+                className="button secondary"
+                onClick={() => user && void syncPucProgress(user.id).catch(() => {})}
+              >
+                Reintentar
+              </button>
+            </>
+          )}
           <Link className="button puc-primary" to={PUC_BASE + '/escanear'}>
             <ScanLine size={17} />
             Continuar escaneando
@@ -351,7 +412,9 @@ export function PucAccountPage() {
             <span className="puc-account-avatar">{user.displayName?.slice(0, 1) || 'V'}</span>
             <span>
               <strong>{user.displayName}</strong>
-              <small>Sesión de Google</small>
+              <small>
+                {user.authProvider === 'google' ? 'Sesión de Google' : 'Sesión iniciada'}
+              </small>
             </span>
           </div>
           <p>
