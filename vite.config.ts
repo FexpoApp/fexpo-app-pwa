@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       react(),
       tailwindcss(),
       VitePWA({
-        registerType: 'prompt',
+        registerType: 'autoUpdate',
         manifest: {
           id: '/',
           name: 'fexpo',
@@ -67,6 +67,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
         workbox: {
+          importScripts: ['pwa-auto-migrate-v1.js'],
           globPatterns: ['**/*.{js,css,html,otf,ttf,png,jpg,svg,webp,mp3}'],
           globIgnores: ['**/matilda-*.mp3'],
           maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,

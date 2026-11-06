@@ -16,7 +16,6 @@ import {
   Monitor,
   ArrowUpRight,
 } from 'lucide-react';
-import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useUI } from '@/state/demo';
 import { Points } from './components';
 import { useTheme } from './theme';
@@ -77,10 +76,6 @@ export function Shell() {
   const [online, setOnline] = useState(navigator.onLine);
   const [install, setInstall] = useState<InstallEvent | null>(null);
   const [installHidden, setInstallHidden] = useState(false);
-  const {
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW();
   const secondary = !tabs.some((tab) => tab.path === pathname);
   useEffect(() => {
     if (LIVE) void bootstrap();
@@ -325,22 +320,6 @@ export function Shell() {
               className="icon-button"
               aria-label="Ocultar instalación"
               onClick={() => setInstallHidden(true)}
-            >
-              <X size={17} />
-            </button>
-          </div>
-        )}
-        {needRefresh && (
-          <div className="install-banner" role="status">
-            <span>
-              <strong>Hay una nueva versión</strong>
-              <small>Actualiza cuando termines tu recorrido.</small>
-            </span>
-            <button onClick={() => void updateServiceWorker(true)}>Actualizar</button>
-            <button
-              className="icon-button"
-              aria-label="Actualizar después"
-              onClick={() => setNeedRefresh(false)}
             >
               <X size={17} />
             </button>

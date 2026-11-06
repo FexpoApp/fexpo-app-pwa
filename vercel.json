@@ -4,11 +4,15 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/((?!api/|assets/|fonts/|icons/|manifest.webmanifest|sw.js|workbox-).*)",
+      "source": "/((?!api/|assets/|fonts/|icons/|manifest.webmanifest|sw.js|pwa-auto-migrate-v1.js|workbox-).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
+    {
+      "source": "/pwa-auto-migrate-v1.js",
+      "headers": [{ "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }]
+    },
     {
       "source": "/manifest.webmanifest",
       "headers": [
@@ -23,7 +27,7 @@
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "no-cache"
+          "value": "no-cache, max-age=0, must-revalidate"
         }
       ]
     },

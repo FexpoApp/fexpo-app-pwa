@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './App';
+import { startAutomaticUpdates } from './pwa/auto-update';
 import './styles.css';
 import './brand.css';
 import './features/fair/fair.css';
@@ -19,6 +20,7 @@ if (legacyProductionHosts.has(window.location.hostname)) {
   target.host = 'app.fexpo.lat';
   window.location.replace(target.href);
 } else {
+  startAutomaticUpdates();
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <BrowserRouter>
