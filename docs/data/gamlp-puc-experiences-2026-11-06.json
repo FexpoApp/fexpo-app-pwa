@@ -1,0 +1,160 @@
+{
+  "event": {
+    "slug": "gamlp-puc-2026",
+    "name": "Imagina Tu Ciudad · Ciudad Productiva",
+    "organizer": "Secretaría Municipal de Ciudad Productiva",
+    "venue": "Parque Urbano Central, La Paz",
+    "startDate": "2026-11-06",
+    "endDate": "2026-11-08",
+    "timezone": "America/La_Paz",
+    "scope": "Solo la sección de la Secretaría Municipal de Ciudad Productiva"
+  },
+  "generalQr": "https://app.fexpo.lat/ferias/gamlp-puc-2026",
+  "experiences": [
+    {
+      "slug": "mercados",
+      "order": 1,
+      "name": "Dirección de Administración de Actividades Económicas con la Unidad de Mercados",
+      "shortName": "Actividades Económicas y Mercados",
+      "type": "carpa",
+      "description": "El recorrido empieza en la carpa de ingreso, con la Dirección de Administración de Actividades Económicas y la Unidad de Mercados.",
+      "mapLots": [
+        "1"
+      ],
+      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/mercados?via=qr"
+    },
+    {
+      "slug": "tunel-mercados",
+      "order": 2,
+      "name": "Túnel de los nuevos mercados",
+      "shortName": "Nuevos mercados",
+      "type": "tunel",
+      "description": "Recorre el pasaje con pantallas que muestran cómo se verán los nuevos mercados. El QR de opinión se encuentra al finalizar el túnel.",
+      "mapLots": [
+        "2"
+      ],
+      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-mercados?via=qr"
+    },
+    {
+      "slug": "desarrollo-economico",
+      "order": 3,
+      "name": "Dirección de Desarrollo Económico, Competitividad e Inversiones",
+      "shortName": "Desarrollo Económico",
+      "type": "carpa",
+      "description": "Dos carpas unidas con pantallas para conocer el trabajo de la Dirección de Desarrollo Económico, Competitividad e Inversiones. Ambas forman una sola experiencia.",
+      "mapLots": [
+        "3A",
+        "3B"
+      ],
+      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/desarrollo-economico?via=qr"
+    },
+    {
+      "slug": "tunel-cites",
+      "order": 4,
+      "name": "Túnel de los CITEs",
+      "shortName": "CITEs",
+      "type": "tunel",
+      "description": "Continúa por el segundo pasaje, dedicado a los CITEs. Al terminar encontrarás el QR para compartir tu experiencia.",
+      "mapLots": [
+        "4"
+      ],
+      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/tunel-cites?via=qr"
+    },
+    {
+      "slug": "publicidad",
+      "order": 5,
+      "name": "Unidad Publicidad",
+      "shortName": "Publicidad",
+      "type": "carpa",
+      "description": "La última carpa del recorrido corresponde a la Unidad Publicidad. Comparte tu opinión antes de salir.",
+      "mapLots": [
+        "5"
+      ],
+      "qrUrl": "https://app.fexpo.lat/ferias/gamlp-puc-2026/calificar/publicidad?via=qr"
+    }
+  ],
+  "map": {
+    "plan": {
+      "id": "gamlp-puc",
+      "zoneId": "ciudad-productiva",
+      "name": "Ciudad Productiva",
+      "level": "Exterior",
+      "color": "#132d46",
+      "viewBox": "20 10 860 880",
+      "outline": "M105 45H795V800H105Z",
+      "origin": {
+        "x": 690,
+        "y": 830
+      },
+      "structures": [
+        {
+          "path": "M560 425A110 110 0 1 1 340 425A110 110 0 1 1 560 425Z",
+          "label": "Domo",
+          "x": 450,
+          "y": 425
+        }
+      ]
+    },
+    "lots": [
+      {
+        "id": "1",
+        "x": 450,
+        "y": 605,
+        "width": 320,
+        "height": 175,
+        "experienceSlug": "mercados"
+      },
+      {
+        "id": "2",
+        "x": 610,
+        "y": 300,
+        "width": 160,
+        "height": 250,
+        "experienceSlug": "tunel-mercados"
+      },
+      {
+        "id": "3A",
+        "x": 130,
+        "y": 70,
+        "width": 320,
+        "height": 175,
+        "experienceSlug": "desarrollo-economico"
+      },
+      {
+        "id": "3B",
+        "x": 450,
+        "y": 70,
+        "width": 320,
+        "height": 175,
+        "experienceSlug": "desarrollo-economico"
+      },
+      {
+        "id": "4",
+        "x": 130,
+        "y": 300,
+        "width": 160,
+        "height": 250,
+        "experienceSlug": "tunel-cites"
+      },
+      {
+        "id": "5",
+        "x": 130,
+        "y": 605,
+        "width": 320,
+        "height": 175,
+        "experienceSlug": "publicidad"
+      }
+    ],
+    "dome": {
+      "x": 450,
+      "y": 425,
+      "radius": 110
+    }
+  },
+  "notes": [
+    "UUID a generar en base de datos; no reutilizar el UUID del evento FIPAZ.",
+    "El domo no es una sexta experiencia.",
+    "Coordenadas en unidades del plano SVG; no representan GPS ni una escala geográfica.",
+    "Las horas de apertura/cierre no están definidas por estas fechas de calendario."
+  ]
+}
