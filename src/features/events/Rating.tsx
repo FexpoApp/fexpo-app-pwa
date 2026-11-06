@@ -1,12 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { Check, MapPin, Star, ArrowRight } from 'lucide-react';
+import { Check, MapPin, Star, ArrowRight, ScanLine } from 'lucide-react';
 import { LIVE } from '@/services/config';
 import { useLive } from '@/state/live';
 import { GoogleLogin } from '@/ui/GoogleLogin';
-import { PUC_BASE, pucExperience, experienceUrl, type PucExperience } from './catalog';
+import {
+  PUC_BASE,
+  PUC_EXPERIENCE_COUNT,
+  pucExperience,
+  experienceUrl,
+  isPucExternalQr,
+  type PucExperience,
+} from './catalog';
 import { PucNotFound } from './Pages';
-import { markPucScanned } from './progress';
+import { hasPucRatingAccess, grantPucRatingAccess } from './scan-access';
+import { ensurePucScan, syncPucProgress, savePucRating, usePucServer } from './server';
+import type { ExperienceRatingDto } from '@/types/api';
 type Draft = { stars: number; comment: string };
 const empty = (): Draft => ({ stars: 0, comment: '' });
 const draftKey = (point: string, owner: string) =>
@@ -25,10 +34,12 @@ function readDraft(key: string): Draft | null {
     return null;
   }
 }
-function useDraft(point: string, userId: string | undefined) {
+function useDraft(point: string, userId: string | undefined, initial?: ExperienceRatingDto | null) {
   const [owner, setOwner] = useState(userId || 'guest');
   const [draft, setDraft] = useState<Draft>(
-    () => readDraft(draftKey(point, userId || 'guest')) || empty(),
+    () =>
+      readDraft(draftKey(point, userId || 'guest')) ||
+      (initial ? { stars: initial.stars, comment: initial.comment || '' } : empty()),
   );
   useEffect(() => {
     const next = userId || 'guest';
@@ -43,6 +54,17 @@ function useDraft(point: string, userId: string | undefined) {
     setOwner(next);
   }, [userId, owner, point]);
   useEffect(() => {
+    const save = () => {
+      try {
+        sessionStorage.setItem(draftKey(point, owner), JSON.stringify(draft));
+      } catch {
+        /* Optional storage. */
+      }
+    };
+    window.addEventListener('fexpo-before-update', save);
+    return () => window.removeEventListener('fexpo-before-update', save);
+  }, [point, owner, draft]);
+  useEffect(() => {
     try {
       sessionStorage.setItem(draftKey(point, owner), JSON.stringify(draft));
     } catch {
@@ -54,30 +76,125 @@ function useDraft(point: string, userId: string | undefined) {
 export function PucRatingPage() {
   const { point: slug = '' } = useParams();
   const point = pucExperience(slug);
-  return point ? <RatingForm key={point.slug} point={point} /> : <PucNotFound />;
+  return point ? <RatingScanGate key={point.slug} point={point} /> : <PucNotFound />;
 }
-function RatingForm({ point }: { point: PucExperience }) {
+function RatingScanGate({ point }: { point: PucExperience }) {
+  const [params, setParams] = useSearchParams();
+  const owner = useLive((s) => s.user?.id);
+  const [access, setAccess] = useState(() => hasPucRatingAccess(point.slug, owner));
+  const external = isPucExternalQr(point.slug, params.get('qr'));
+  useEffect(() => {
+    if (!external || !owner) return;
+    if (
+      hasPucRatingAccess(point.slug, owner) ||
+      grantPucRatingAccess(point.slug, owner, 'external-qr')
+    ) {
+      setAccess(true);
+      const next = new URLSearchParams(params);
+      next.delete('qr');
+      next.delete('via');
+      setParams(next, { replace: true });
+    }
+  }, [external, owner, point.slug, params, setParams]);
+  if (!access || !hasPucRatingAccess(point.slug, owner))
+    return (
+      <section className="puc-scan-required">
+        <span className="puc-gate-symbol">
+          <ScanLine size={29} />
+        </span>
+        <h1>Escanea el QR de este lugar</h1>
+        <p>
+          Para calificar <strong>{point.shortName}</strong>, primero lee el código de esta
+          experiencia.
+        </p>
+        <Link className="button puc-primary" to={PUC_BASE + '/escanear?point=' + point.slug}>
+          <ScanLine size={18} />
+          Escanear QR
+        </Link>
+        <Link className="button ghost" to={experienceUrl(point.slug)}>
+          Ver la experiencia
+        </Link>
+      </section>
+    );
+  return <ConnectedRating key={owner + point.slug} point={point} owner={owner!} />;
+}
+function ConnectedRating({ point, owner }: { point: PucExperience; owner: string }) {
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);
+  const data = usePucServer((s) => (s.owner === owner ? s.progress : null));
+  useEffect(() => {
+    let cancelled = false;
+    setReady(false);
+    setError('');
+    void (async () => {
+      await syncPucProgress(owner);
+      await ensurePucScan(point.slug, owner);
+      if (!cancelled) setReady(true);
+    })().catch((e) => {
+      if (!cancelled) setError(e instanceof Error ? e.message : 'No pudimos cargar este punto.');
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [owner, point.slug, retry]);
+  if (!ready)
+    return (
+      <section className="puc-scan-required">
+        <h1>{error ? 'No pudimos abrir la calificación' : 'Preparando tu calificación…'}</h1>
+        {error ? (
+          <>
+            <p role="alert">{error}</p>
+            <button className="button puc-primary" onClick={() => setRetry((v) => v + 1)}>
+              Reintentar
+            </button>
+          </>
+        ) : (
+          <p role="status">Comprobando tu lectura y tu opinión guardada.</p>
+        )}
+        <Link className="button ghost" to={experienceUrl(point.slug)}>
+          Ver la experiencia
+        </Link>
+      </section>
+    );
+  return (
+    <RatingForm
+      key={owner + point.slug}
+      point={point}
+      initial={data?.experiences.find((p) => p.slug === point.slug)?.myRating}
+    />
+  );
+}
+function RatingForm({
+  point,
+  initial,
+}: {
+  point: PucExperience;
+  initial?: ExperienceRatingDto | null;
+}) {
   const [params] = useSearchParams();
   const preview = !LIVE && params.get('preview') === '1';
-  const viaQr = params.get('via') === 'qr';
-  useEffect(() => {
-    if (viaQr) markPucScanned(point.slug);
-  }, [viaQr, point.slug]);
   const user = useLive((s) => s.user);
   const signedIn = useLive((s) => s.status === 'signedIn');
-  const [draft, setDraft] = useDraft(point.slug, user?.id);
+  const [draft, setDraft] = useDraft(point.slug, user?.id, initial);
   const [example, setExample] = useState(false);
   const [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState<ExperienceRatingDto | null>(null);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
-  if (example)
+  if (example || saved)
     return (
       <section className="puc-rating-success">
-        <p className="puc-preview-label">Vista de diseño · ninguna opinión enviada</p>
+        {example && <p className="puc-preview-label">Vista de diseño · ninguna opinión enviada</p>}
         <span className="puc-success-mark">
           <Check size={35} />
         </span>
         <h1>¡Gracias por tu opinión!</h1>
-        <p>Así se verá la confirmación cuando el servidor guarde tu calificación.</p>
+        <p>
+          {saved
+            ? 'Tu calificación quedó guardada.'
+            : 'Así se verá la confirmación cuando el servidor guarde tu calificación.'}
+        </p>
         <div className="puc-rating-target">
           <span className="puc-step">{point.order}</span>
           <div>
@@ -85,7 +202,11 @@ function RatingForm({ point }: { point: PucExperience }) {
             <small>GAMLP · Ciudad Productiva</small>
             <span className="puc-star-summary" aria-label={`${draft.stars} de 5 estrellas`}>
               {[1, 2, 3, 4, 5].map((n) => (
-                <Star key={n} size={21} fill={n <= draft.stars ? 'currentColor' : 'none'} />
+                <Star
+                  key={n}
+                  size={21}
+                  fill={n <= (saved?.stars || draft.stars) ? 'currentColor' : 'none'}
+                />
               ))}
             </span>
           </div>
@@ -97,14 +218,22 @@ function RatingForm({ point }: { point: PucExperience }) {
         <Link className="button secondary" to={PUC_BASE + '/recorrido'}>
           Explorar otro punto
         </Link>
-        <button className="button ghost" onClick={() => setExample(false)}>
-          Volver al borrador
+        <button
+          className="button ghost"
+          onClick={() => {
+            setExample(false);
+            setSaved(null);
+          }}
+        >
+          {saved ? 'Editar mi calificación' : 'Volver al borrador'}
         </button>
       </section>
     );
   return (
     <section className="puc-rating-page">
-      <span className="puc-label">PUNTO {point.order} DE 5 · GAMLP</span>
+      <span className="puc-label">
+        PUNTO {point.order} DE {PUC_EXPERIENCE_COUNT} · GAMLP
+      </span>
       <h1>¿Cómo fue tu experiencia?</h1>
       <Link className="puc-rating-target" to={experienceUrl(point.slug)}>
         <span className="puc-step">{point.order}</span>
@@ -117,13 +246,19 @@ function RatingForm({ point }: { point: PucExperience }) {
         </span>
       </Link>
       <form
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
-          setError(
-            !LIVE || !signedIn
-              ? 'Necesitas iniciar sesión con Google para enviar tu opinión.'
-              : 'El envío todavía no está habilitado para esta feria. Conservamos tu borrador.',
-          );
+          if (saving || !LIVE || !signedIn || !user) return;
+          setSaving(true);
+          setError('');
+          try {
+            const result = await savePucRating(point.slug, user.id, draft.stars, draft.comment);
+            setSaved(result.rating);
+          } catch (e) {
+            setError(e instanceof Error ? e.message : 'No pudimos guardar tu opinión. Reintenta.');
+          } finally {
+            setSaving(false);
+          }
         }}
       >
         <fieldset className="puc-rating-field">
@@ -139,6 +274,7 @@ function RatingForm({ point }: { point: PucExperience }) {
                   ref={(element) => {
                     inputRefs.current[value - 1] = element;
                   }}
+                  disabled={saving}
                   onChange={() => setDraft((d) => ({ ...d, stars: value }))}
                   aria-label={`${value} ${value === 1 ? 'estrella' : 'estrellas'}`}
                   onKeyDown={(event) => {
@@ -164,6 +300,7 @@ function RatingForm({ point }: { point: PucExperience }) {
         <label className="puc-comment-label">
           Comentario <span>(opcional)</span>
           <textarea
+            disabled={saving}
             value={draft.comment}
             maxLength={1000}
             placeholder="Cuéntanos cómo te fue…"
@@ -186,16 +323,15 @@ function RatingForm({ point }: { point: PucExperience }) {
         ) : (
           <p className="puc-signed-in">Conectado como {user?.displayName}</p>
         )}
-        <p className="puc-small-note">
-          El envío de opiniones se habilitará próximamente. Tu borrador no cuenta como una
-          calificación.
-        </p>
+        {initial && (
+          <p className="puc-small-note">Ya calificaste este lugar. Puedes actualizar tu opinión.</p>
+        )}
         <button
           className="button puc-primary"
           type="submit"
-          disabled={!LIVE || !signedIn || !draft.stars}
+          disabled={!LIVE || !signedIn || !draft.stars || saving}
         >
-          Enviar calificación
+          {saving ? 'Guardando…' : initial ? 'Actualizar calificación' : 'Enviar calificación'}
         </button>
         {error && (
           <p role="alert" className="puc-form-error">
