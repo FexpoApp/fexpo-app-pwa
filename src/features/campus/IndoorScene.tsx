@@ -28,6 +28,9 @@ interface Props {
   lotHeights?: number[];
   showLotLabels?: boolean;
   showCompanies?: boolean;
+  domes?: readonly { x: number; y: number; radius: number }[];
+  initialZoom?: number;
+  focusSelection?: boolean;
   showStructureLabels?: boolean;
   route?: PlanPosition[];
   showAvatar?: boolean;
@@ -65,6 +68,7 @@ export default function IndoorScene(props: Props) {
     renderer.domElement.dataset.campusCanvas = 'true';
     renderer.domElement.dataset.planId = plan.id;
     renderer.domElement.dataset.lotCount = String(lots.length);
+    renderer.domElement.dataset.domeCount = String(props.domes?.length ?? 0);
     if (PLAN_LOTS[plan.id]) {
       renderer.domElement.dataset.planRevision = '2026-11-04';
       renderer.domElement.dataset.lotCodes = lots.map(([code]) => String(code)).join(',');
@@ -163,6 +167,26 @@ export default function IndoorScene(props: Props) {
     };
     shapeFrom(plan.outline, 0.12, floor);
     for (const s of plan.structures) shapeFrom(s.path, 0.38, grey);
+    for (const dome of props.domes ?? []) {
+      const p = toWorld(plan, dome);
+      const geo = new THREE.SphereGeometry(
+        dome.radius * WORLD_SCALE,
+        16,
+        8,
+        0,
+        Math.PI * 2,
+        0,
+        Math.PI / 2,
+      );
+      geometries.push(geo);
+      const frame = new THREE.MeshBasicMaterial({
+        color: dark ? '#f2f5f2' : '#71848b',
+        wireframe: true,
+      });
+      materials.push(frame);
+      const mesh = make(geo, frame, p.x, 0.4, p.z);
+      mesh.castShadow = false;
+    }
     const companyLogos = lots.map(([code]) =>
       props.showCompanies
         ? companiesAtLot(plan.id, code).find((company) => company.logo)?.logo
@@ -373,6 +397,7 @@ export default function IndoorScene(props: Props) {
     );
     halo.rotation.x = -Math.PI / 2;
     const camera = new THREE.OrthographicCamera(-20, 20, 20, -20, 0.1, 200);
+    camera.zoom = props.initialZoom ?? 1;
     camera.position.set(20, 34, 34);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 0, 0);
@@ -400,7 +425,7 @@ export default function IndoorScene(props: Props) {
       dirty = true;
     };
     const reset = () => {
-      camera.zoom = 1;
+      camera.zoom = props.initialZoom ?? 1;
       controls.target.set(0, 0, 0);
       camera.position.set(latest.current.aerial ? 0 : 20, 34, latest.current.aerial ? 0.01 : 34);
       camera.updateProjectionMatrix();
@@ -534,7 +559,7 @@ export default function IndoorScene(props: Props) {
           });
           highlightGeo.setFromPoints(corners);
           const p = toWorld(plan, { x: x + w / 2, y: y + h / 2 });
-          focus(p.x, p.z);
+          if (current.focusSelection !== false) focus(p.x, p.z);
         }
         dirty = true;
       }
