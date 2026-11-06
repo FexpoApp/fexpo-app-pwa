@@ -1,0 +1,72 @@
+{
+  "id": "e0000000-0000-4000-8000-000000000002",
+  "slug": "gamlp-puc-2026",
+  "name": "Imagina Tu Ciudad · Ciudad Productiva",
+  "status": "active",
+  "startsAt": "2026-11-06T04:00:00.000Z",
+  "endsAt": "2026-11-09T04:00:00.000Z",
+  "timezone": "America/La_Paz",
+  "experiences": [
+    {
+      "id": "ea000000-0000-4000-8000-000000000001",
+      "slug": "mercados",
+      "order": 1,
+      "name": "Dirección de Administración de Actividades Económicas con la Unidad de Mercados",
+      "shortName": "Actividades Económicas y Mercados",
+      "type": "carpa",
+      "description": "El recorrido empieza en la carpa de ingreso, con la Dirección de Administración de Actividades Económicas y la Unidad de Mercados.",
+      "lots": [
+        "1"
+      ]
+    },
+    {
+      "id": "ea000000-0000-4000-8000-000000000002",
+      "slug": "tunel-mercados",
+      "order": 2,
+      "name": "Túnel de los nuevos mercados",
+      "shortName": "Nuevos mercados",
+      "type": "tunel",
+      "description": "Recorre el pasaje con pantallas que muestran cómo se verán los nuevos mercados. El QR de opinión se encuentra al finalizar el túnel.",
+      "lots": [
+        "2"
+      ]
+    },
+    {
+      "id": "ea000000-0000-4000-8000-000000000003",
+      "slug": "desarrollo-economico",
+      "order": 3,
+      "name": "Dirección de Desarrollo Económico, Competitividad e Inversiones",
+      "shortName": "Desarrollo Económico",
+      "type": "carpa",
+      "description": "Dos carpas unidas con pantallas para conocer el trabajo de la Dirección de Desarrollo Económico, Competitividad e Inversiones. Ambas forman una sola experiencia.",
+      "lots": [
+        "3A",
+        "3B"
+      ]
+    },
+    {
+      "id": "ea000000-0000-4000-8000-000000000004",
+      "slug": "tunel-cites",
+      "order": 4,
+      "name": "Túnel de los CITEs",
+      "shortName": "CITEs",
+      "type": "tunel",
+      "description": "Continúa por el segundo pasaje, dedicado a los CITEs. Al terminar encontrarás el QR para compartir tu experiencia.",
+      "lots": [
+        "4"
+      ]
+    },
+    {
+      "id": "ea000000-0000-4000-8000-000000000005",
+      "slug": "publicidad",
+      "order": 5,
+      "name": "Unidad Publicidad",
+      "shortName": "Publicidad",
+      "type": "carpa",
+      "description": "La última carpa del recorrido corresponde a la Unidad Publicidad. Comparte tu opinión antes de salir.",
+      "lots": [
+        "5"
+      ]
+    }
+  ]
+}
