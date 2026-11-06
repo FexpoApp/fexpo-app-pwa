@@ -3,6 +3,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import QRCode from 'react-qr-code';
 import { PUC_TEST_QR } from '../../src/features/events/catalog';
+import { PUC_ISSUED_QRS } from '../../src/features/events/issued-qr';
 // @ts-expect-error JavaScript fixture is shared with the standalone SW test.
 import { setupPucApi } from './puc-api-fixture.mjs';
 const base = '/ferias/gamlp-puc-2026';
@@ -33,7 +34,12 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
       const writes = api.requests.filter((r: { method: string }) => r.method === 'PUT');
       expect(writes).toHaveLength(2);
       expect(writes[0].body.requestKey).toBe(writes[1].body.requestKey);
-      expect(Object.keys(writes[1].body).sort()).toEqual(['comment', 'requestKey', 'stars']);
+      expect(Object.keys(writes[1].body).sort()).toEqual([
+        'comment',
+        'requestKey',
+        'scanReceipt',
+        'stars',
+      ]);
       await page.getByRole('button', { name: 'Editar mi calificación' }).click();
       await page.getByRole('radio', { name: '5 estrellas', exact: true }).check();
       await page.getByRole('button', { name: 'Actualizar calificación', exact: true }).click();
@@ -216,11 +222,12 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     }) => {
       await prepare(page);
       const fixture = await context.newPage();
+      const publicidad = PUC_ISSUED_QRS.find((q) => q.slug === 'publicidad')!;
       await fixture.setContent(
         '<main style="background:white;padding:30px;width:360px">' +
           renderToStaticMarkup(
             createElement(QRCode, {
-              value: 'https://app.fexpo.lat' + base + '/calificar/publicidad',
+              value: publicidad.shortUrl,
               size: 360,
             }),
           ) +
@@ -315,7 +322,7 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
           });
           HTMLMediaElement.prototype.play = async () => {};
         },
-        { destination: 'https://app.fexpo.lat' + base + '/calificar/tunel-mercados' },
+        { destination: PUC_ISSUED_QRS.find((q) => q.slug === 'tunel-mercados')!.shortUrl },
       );
       await page.goto(base + '/escanear');
       await page.getByRole('button', { name: 'Activar cámara', exact: true }).click();

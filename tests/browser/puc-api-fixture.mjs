@@ -61,7 +61,13 @@ export async function setupPucApi(page, owner = 'test-user', displayName = 'Ana 
           lastScannedAt: at,
         };
         state.scans.set(key, scan);
-        data = { scan, firstScan: !prior, progress: summary() };
+        data = {
+          scan,
+          firstScan: !prior,
+          scanReceipt: 'receipt_' + experienceId + '_' + (state.owner || 'guest'),
+          receiptExpiresAt: new Date(Date.now() + 12 * 3600 * 1000).toISOString(),
+          progress: summary(),
+        };
       } else if (path.endsWith('/my-rating')) {
         if (state.failRatings-- > 0)
           return route.fulfill({
