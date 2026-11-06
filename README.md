@@ -2,7 +2,7 @@
 
 Aplicación de visitantes en React, Vite y TypeScript. Identidad FEXPO: símbolo de módulos, Poppins, azul, lima y marfil; temas claro y oscuro.
 
-Producción: [app.fexpo.lat](https://app.fexpo.lat). Revisión del 04/11/2026: planos, directorio fotografiado y marcas verificadas. Conserva Inicio, Descubre, QR, iconos oficiales y el sector GAMLP.
+Producción: [app.fexpo.lat](https://app.fexpo.lat). Entrega del 06/11/2026: GAMLP–PUC conectado a la API, seis QR en Word, logo de La Paz y actualizaciones automáticas. El historial de planos, directorio y sector municipal de FIPAZ se conserva separado.
 
 Planos actuales: [fuentes, cambios por bloque y pendientes](docs/PLANOS-FOTOGRAFIADOS-2026-11-04.md). Se cotejaron rojo bajo/alto, amarillo bajo/alto, verde alto, ingreso principal y patio de comidas. Son **450 espacios y zonas**, con formas y numeración compartidas en 2D/3D. El acceso Mapa abre `/map?reference=2026-11-04`; la referencia no modifica el catálogo publicado ni la base de datos.
 
@@ -12,31 +12,31 @@ Demo municipal: [recorrido, fuentes del mapa y pendientes de integración](docs/
 
 Documentación actual: [Descubre, QR y comparación del mapa oficial](docs/DESCUBRE-QR-Y-MAPA-OFICIAL-2026-11-01.md). Registros anteriores: [Inicio y agenda](docs/INICIO-AGENDA-Y-DESCUBRE-2026-11-01.md), [Descubrimiento y mapa](docs/MEJORAS-DESCUBRIMIENTO-2026-10-28.md) y [Mejoras móviles](docs/MEJORAS-MOVIL-2026-10-28.md).
 
-## Trabajo actual: GAMLP–PUC / multievento (06/11/2026)
+## Trabajo actual: GAMLP–PUC conectado (06/11/2026)
 
-**Regla vigente:** solo GAMLP aparece en el selector. Google es obligatorio antes de abrir el lector QR o cualquier formulario de calificación. Las rutas históricas de FIPAZ permanecen separadas. [Entrega lista para backend y BD](docs/ENTREGA-BACKEND-BD-GAMLP-2026-11-06.md) · [Catálogo para seed](docs/data/gamlp-puc-experiences-2026-11-06.json).
+Solo GAMLP aparece en el selector. La PWA exige Google y lectura del QR del punto para calificar. Se conecta al contrato entregado por Erick: el catálogo publicado tiene cinco paradas; el domo es el sexto punto previsto y espera publicación de backend/BD. FIPAZ conserva sus rutas y datos separados.
 
-Primera entrega visual en desarrollo. El inicio `/` es el selector vertical de ferias; FIPAZ abre en `/ferias/fipaz-2026` y conserva sus rutas operativas. GAMLP abre en `/ferias/gamlp-puc-2026`, con navegación, mapa y contenido propios. Esta entrega no despliega cambios ni ejecuta migraciones.
+[Entrega vigente e integración](docs/INTEGRACION-GAMLP-API-Y-QR-2026-11-06.md) · [Correcciones extras de backend/BD](docs/CORRECCIONES-EXTRAS-2026-11-06.md) · [Word de seis QR carta](docs/entregables/QR-CIUDAD-PRODUCTIVA-CARTA.docx) · [Correcciones en Word](docs/entregables/CORRECCIONES-EXTRAS-GAMLP-2026-11-06.docx).
 
-[Plan completo y decisiones aprobadas](../FERIAS/GAMLP/PLAN-FEXPO-GAMLP-PUC-2026-11-06.md).
+- [x] Cabecera institucional: escudo, Secretaría y logo de La Paz a la derecha; adapta tamaño a móvil. Cambio de feria discreto en Perfil.
+- [x] Mapa 2D/3D fiel al esquema: cuatro carpas, dos pasajes y domo central. 3A/3B comparten una sola experiencia.
+- [x] Google obligatorio para lector/formulario; authProvider conservado al restaurar sesión.
+- [x] Lector real con detector nativo y respaldo jsQR; lectura de imagen, validación de punto y liberación de cámara. Sin pegado manual.
+- [x] Seis enlaces cortos personalizados con identificadores públicos por punto. QR externos conservan el destino tras Google. via=qr o abrir una ficha no habilita el formulario.
+- [x] Resolución de UUID por slug y proxy cerrado para catálogo/progreso, lectura y opinión propia. No usa puntos, NFC, QR personal ni UUID de evento FIPAZ.
+- [x] Registro de lectura confirmado antes del formulario. Guardado/edición mediante API; éxito solo con la opinión devuelta por servidor.
+- [x] Borrador por cuenta/punto; requestKey conservado al reintentar y renovado al cambiar contenido. Fallos conservan estrellas y comentario.
+- [x] Perfil y recorrido reflejan opiniones de la cuenta. El denominador viene de la API (actualmente cinco); historial local no suma opiniones. Cambiar cuenta descarta respuestas privadas tardías.
+- [x] Domo visible como sexta experiencia y QR preparado; muestra indisponibilidad hasta que el servidor publique su UUID. No se simula guardado.
+- [x] Word carta de seis páginas: marco institucional, título, QR y una sola frase. Códigos decodificados desde el documento renderizado; enlaces 301 verificados.
+- [x] Actualización automática de PWA, con conservación de ruta/borrador y migración desde instalaciones con actualización manual. Revisa al abrir/volver/recuperar red y cada 60 segundos visible.
+- [x] Backend f00890f y BD d971250 recibidos localmente. API health y catálogo 200; rutas privadas sin token 401. No se ejecutaron migraciones ni escrituras de prueba en producción.
+- [ ] Backend/BD: publicar domo mediante migración nueva, admitir tipo domo y devolver seis puntos en catálogo/progreso/métricas.
+- [ ] Backend/BD: validar QR emitido y comprobante de lectura antes de guardar. El contrato actual solo admite source/requestKey y stars/comment/requestKey.
+- [ ] Backend: exigir proveedor Google en las rutas privadas del circuito. Hoy JwtAuthGuard acepta otras sesiones válidas.
+- [ ] Organización: comprobar QR impreso, Google real, edición, red intermitente y progreso en otro teléfono; cotejar con métricas de BD. Reservar el impreso del domo hasta su publicación.
 
-[Implementación de identidad, QR, progreso y checklist de backend/BD](docs/GAMLP-IDENTIDAD-QR-Y-PROGRESO-2026-11-06.md).
-
-- [x] Selector público de ferias con identidad FEXPO. Dentro de GAMLP: cabecera centrada de Ciudad Productiva, sin marca FEXPO ni iconos de descarga/perfil; cambio de feria discreto en Perfil.
-- [x] Recorrido exacto de cinco experiencias, seis destinos QR y domo central. Dos carpas superiores comparten una ficha/evaluación. Mapas 2D/3D comparten la misma geometría.
-- [x] Fichas y formularios con cinco estrellas/comentario opcional. Borradores de esta pestaña separados por experiencia/cuenta, conservados al acceder con Google.
-- [x] Autenticación Google reutilizada en modo conectado, separada de la carga de catálogo/puntos de FIPAZ. Una cuenta de prueba local no habilita opiniones reales.
-- [x] Banner institucional con ambos logos, accesos ilustrados y recorrido con imágenes conceptuales y ubicación por parada. PNG originales y prompts en [recursos de Ciudad Productiva](../FERIAS/GAMLP/assets-ciudad-productiva/); WebP para la PWA.
-- [x] Lector QR con cámara: detector nativo y respaldo [jsQR](https://github.com/cozmo/jsQR) cargado bajo demanda. Lee también imágenes; libera cámara al salir/ocultar y rechaza destinos ajenos. Alternativa manual conservada.
-- [x] Perfil con avance de cinco QR leídos en este dispositivo, deduplicados y persistidos localmente. Las calificaciones confirmadas siguen en cero hasta integrar el backend; abrir una ficha, seleccionar estrellas o revisar una confirmación de ejemplo no completa una opinión.
-- [ ] Revisar esta entrega visual con Omar. La confirmación de ejemplo está disponible únicamente en local/demo con `?preview=1`, identificada y sin envío real.
-- [ ] Backend/BD: publicar evento y cinco experiencias con UUID reales; endpoint autenticado para opinión propia, creación/edición, restricción única usuario/evento/punto e idempotencia. El formulario actual no envía ni simula una confirmación real.
-- [ ] Backend/BD: métricas de personas únicas, opiniones por punto, estrellas, comentarios y recorridos completos; panel interno/CSV autorizado. Abrir un QR o iniciar sesión no cuenta como opinión.
-- [ ] Backend/BD: lectura del progreso por cuenta/evento y actualización desde respuestas persistidas. El historial local `fexpo-puc-scans-v1` no acredita presencia física ni sirve como métrica oficial. `pucPrintedQrUrl(slug)` incluye `?via=qr` para los cinco formularios externos.
-- [x] Seis QR con URL canónica, marco institucional, PDF carta y PNG de 300 ppp; decodificación verificada contra el PDF final. En el proyecto documental: `FERIAS/GAMLP/QR-CARTA-2026-11-06/`.
-- [ ] Publicar rutas y backend antes de distribuir/imprimir; probar los seis QR en Android/iOS y PWA instalada. Instalar es opcional.
-
-La configuración `VITE_EVENT_ID` se mantiene para la integración operativa existente de FIPAZ. GAMLP usa un catálogo visual por slug, sin inventar un UUID ni reutilizar ese evento de servidor. La selección por rutas es la base de la integración multievento; falta conectar los UUID y el contrato de opiniones de GAMLP.
+Las pruebas de navegador usan Google/API simulados; la revisión pública no creó usuarios ni opiniones reales. La PWA trabaja contra los UUID que publica el catálogo, sin constantes provisionales. Registros anteriores: [plan inicial](../FERIAS/GAMLP/PLAN-FEXPO-GAMLP-PUC-2026-11-06.md) y [QR, domo y actualización](docs/ENTREGA-GAMLP-QR-DOMO-AUTOUPDATE-2026-11-06.md).
 
 ## Para el equipo: implementado y pendiente
 

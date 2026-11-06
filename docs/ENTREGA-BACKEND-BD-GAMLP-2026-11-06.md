@@ -1,5 +1,9 @@
 # Entrega a backend y base de datos: GAMLP / Ciudad Productiva
 
+**Actualización posterior:** la PWA ya conecta lecturas, guardado, edición y progreso al contrato de Erick. Hay seis QR en Word; la API aún publica cinco puntos. Consultar [integración vigente](INTEGRACION-GAMLP-API-Y-QR-2026-11-06.md) y [correcciones extras](CORRECCIONES-EXTRAS-2026-11-06.md). Las referencias siguientes a formularios sin envío son históricas.
+
+**Versión anterior. La entrega vigente, con seis experiencias, escaneo obligatorio y actualización automática, está en [ENTREGA-GAMLP-QR-DOMO-AUTOUPDATE-2026-11-06.md](ENTREGA-GAMLP-QR-DOMO-AUTOUPDATE-2026-11-06.md).**
+
 Fecha: 06/11/2026. Repositorio de interfaz: `fexpo-app-pwa`. Evento: **Imagina Tu Ciudad**, Parque Urbano Central, La Paz, 6 al 8 de noviembre de 2026. Alcance: únicamente la **Secretaría Municipal de Ciudad Productiva**.
 
 ## Estado y regla vigente

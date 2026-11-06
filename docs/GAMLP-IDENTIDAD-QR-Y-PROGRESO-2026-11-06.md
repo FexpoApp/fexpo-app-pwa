@@ -1,8 +1,10 @@
 # Ciudad Productiva: interfaz, lector QR y progreso
 
+**Actualización posterior:** la PWA ya conecta lecturas, guardado, edición y progreso al contrato de Erick. Hay seis QR en Word; la API aún publica cinco puntos. Consultar [integración vigente](INTEGRACION-GAMLP-API-Y-QR-2026-11-06.md) y [correcciones extras](CORRECCIONES-EXTRAS-2026-11-06.md). Las referencias siguientes a formularios sin envío son históricas.
+
 Trabajo local del 06/11/2026. Esta adecuación corresponde a la Secretaría Municipal de Ciudad Productiva en **Imagina Tu Ciudad, Parque Urbano Central**, no al sector P14-A/B de FIPAZ. FIPAZ conserva su aplicación y su integración existente.
 
-**Actualización posterior:** FIPAZ ya no aparece en el selector. Google es obligatorio antes de abrir el lector o los formularios, no solo al enviar. La entrega técnica vigente está en [ENTREGA-BACKEND-BD-GAMLP-2026-11-06.md](ENTREGA-BACKEND-BD-GAMLP-2026-11-06.md).
+**Actualización posterior:** FIPAZ ya no aparece en el selector. Google y lectura del QR del punto son obligatorios para calificar. El domo es la sexta experiencia y el progreso se mide sobre seis puntos. Solo se generó el QR corto de prueba de Mercados, aprobado por Omar. La entrega técnica vigente, incluida la actualización automática de la PWA, está en [QR, domo y actualización automática](ENTREGA-GAMLP-QR-DOMO-AUTOUPDATE-2026-11-06.md). Las referencias a cinco puntos y al paquete de seis hojas de este registro son históricas.
 
 ## Implementado
 
