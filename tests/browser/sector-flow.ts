@@ -7,7 +7,7 @@ export function sectorFlow(prepare: (page: Page) => Promise<void | (() => void)>
   }) => {
     const assertNoWrites = await prepare(page);
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await page.goto('/');
+    await page.goto('/ferias/fipaz-2026');
     await page.locator('.poster-municipal').click();
     await expect(page).toHaveURL(/plan=yellow-upper.*sector=gamlp/);
     await expect(page.getByRole('heading', { name: 'Pabellón Bolivia' })).toBeVisible();

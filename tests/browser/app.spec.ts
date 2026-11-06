@@ -1,3 +1,4 @@
+import { multieventFlow } from './multievent-flow';
 import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect } from '@playwright/test';
 import { sectorFlow } from './sector-flow';
@@ -65,7 +66,7 @@ test('anuncios rotan automáticamente, se pueden pausar y respetan movimiento re
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page.mouse.move(1, 1);
   await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '1', {
     timeout: 8500,
@@ -86,7 +87,7 @@ test('anuncios rotan automáticamente, se pueden pausar y respetan movimiento re
 test('inicio compacto, anuncios independientes y agenda navegable con Descubre y progreso en Perfil', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await expect(page.locator('.fair-compact')).toHaveCount(0);
   await expect(
     page.getByRole('link', { name: 'FIPAZ 2026: ver agenda e información de la feria' }),
@@ -103,7 +104,7 @@ test('inicio compacto, anuncios independientes y agenda navegable con Descubre y
   await expect(page.locator('.advertisement-rail')).toHaveAttribute('data-active', '2');
   await page.locator('.advertisement[href="/stands/stand-sabor-andino"]').click();
   await expect(page).toHaveURL(/\/stands\/stand-sabor-andino$/);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page
     .getByRole('link', { name: 'FIPAZ 2026: ver agenda e información de la feria' })
     .click();
@@ -133,7 +134,7 @@ for (const theme of ['light', 'dark'])
         .click();
       await page.setViewportSize({ width, height: 900 });
       for (const route of [
-        '/',
+        '/ferias/fipaz-2026',
         '/map',
         '/scan',
         '/missions',
@@ -234,7 +235,7 @@ test('la PWA abre rutas y recursos offline después de la primera carga', async 
   page,
   context,
 }) => {
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -324,3 +325,5 @@ test('directorio y logo verificado siguen disponibles sin red tras actualizar la
     await context.setOffline(false);
   }
 });
+
+multieventFlow('demo');

@@ -1,3 +1,4 @@
+import { multieventFlow } from './multievent-flow';
 import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
@@ -451,7 +452,7 @@ test('sin Web NFC muestra Mi QR y nunca inventa una visita', async ({ page }) =>
 });
 test('audio offline válido y ausencia de caché de API privada', async ({ page, context }) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
   });
@@ -711,7 +712,7 @@ for (const width of [320, 390, 1440])
         .getByRole('button', { name: theme === 'light' ? 'Claro' : 'Oscuro', exact: true })
         .click();
       for (const path of [
-        '/',
+        '/ferias/fipaz-2026',
         '/map',
         '/scan',
         '/missions',
@@ -736,11 +737,18 @@ for (const width of [320, 390, 1440])
         ).toBe(0);
         if (
           width === 390 &&
-          ['/', '/map', '/scan', '/missions', '/profile', `/stands/${standId}`].includes(path)
+          [
+            '/ferias/fipaz-2026',
+            '/map',
+            '/scan',
+            '/missions',
+            '/profile',
+            `/stands/${standId}`,
+          ].includes(path)
         ) {
           await expect(page.locator('.app-header .points-pill')).toHaveText('17');
           await page.screenshot({
-            path: `test-results/screenshots/integration/${theme}-${path === '/' ? 'home' : path.startsWith('/stands/') ? 'stand' : path.slice(1)}.png`,
+            path: `test-results/screenshots/integration/${theme}-${path === '/ferias/fipaz-2026' ? 'home' : path.startsWith('/stands/') ? 'stand' : path.slice(1)}.png`,
             fullPage: true,
           });
         }
@@ -772,7 +780,7 @@ test('primer acceso pregunta intereses, los recuerda y separa otra cuenta', asyn
         }),
       );
   });
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await expect(page.getByRole('dialog', { name: '¿Qué te interesa descubrir?' })).toBeVisible();
   await page.getByRole('button', { name: 'Tecnología', exact: true }).click();
   await page.getByRole('button', { name: 'Guardar intereses', exact: true }).click();
@@ -793,7 +801,7 @@ test('primer acceso pregunta intereses, los recuerda y separa otra cuenta', asyn
 });
 test('las ofertas se recorren con botones y gesto, y abren el stand', async ({ page }) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page.locator('.offers-heading .shelf-heading').click();
   await expect(page.getByRole('dialog', { name: 'Descubre las ofertas' })).toBeVisible();
   await expect(page.locator('.offer-browser-controls')).toContainText('1 de 2');
@@ -888,7 +896,7 @@ test('agenda live usa actividades publicadas, hora de La Paz y no anuncia ejempl
   await expect(
     page.getByRole('heading', { name: 'Presentación publicada por el organizador' }),
   ).toHaveCount(0);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await expect(page.locator('.advertisement')).toHaveCount(1);
   await expect(page.locator('.poster-municipal')).toContainText('Sector municipal');
   await expect(page.getByText('Ejemplo · Publicidad', { exact: true })).toHaveCount(0);
@@ -921,4 +929,8 @@ test('agenda caída permite reintentar sin presentar una cartelera ficticia', as
     'href',
     'https://www.facebook.com/feriafipaz/',
   );
+});
+
+multieventFlow('live', async (page, guest) => {
+  await setup(page, guest);
 });

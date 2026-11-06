@@ -1,3 +1,4 @@
+import { multieventFlow } from './multievent-flow';
 import { exhibitorFlow } from './exhibitor-flow';
 import { test, expect, type Page } from '@playwright/test';
 import { PLAN_GEOMETRY, PLAN_LOTS } from '../../src/data/map-plans';
@@ -5,17 +6,17 @@ import { sectorFlow } from './sector-flow';
 import { photoPlanFlow } from './photo-plan-flow';
 photoPlanFlow(async (page) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
 });
 exhibitorFlow(async (page) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
 });
 sectorFlow(async (page) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
 });
 async function setup(page: Page) {
@@ -55,7 +56,7 @@ async function expectNoNfc(page: Page) {
 
 test('entrada de prueba sin Google ni backend y perfil persistido', async ({ page }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await expect(page.getByRole('heading', { name: /FIPAZ/ })).toBeVisible();
   await expect(page.locator('.bottom-nav')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeDisabled();
@@ -73,7 +74,7 @@ test('entrada de prueba sin Google ni backend y perfil persistido', async ({ pag
 });
 test('Google queda como mock y cerrar la prueba devuelve a bienvenida', async ({ page }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeDisabled();
   await expect(page.getByText('Próximamente', { exact: true })).toBeVisible();
   await enterTrial(page);
@@ -90,7 +91,7 @@ test('acceso QR de bienvenida abre la prueba sin Google, NFC ni puntos reales', 
   page,
 }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await page.getByRole('button', { name: 'Ver mi pase QR', exact: true }).click();
   await expect(page).toHaveURL('/scan');
   await expect(page.getByRole('heading', { name: 'Muéstralo en el stand' })).toBeVisible();
@@ -114,7 +115,7 @@ test('la antigua ruta NFC requiere entrada local y redirige al pase QR', async (
 
 test('mostrar y recargar el QR no registra visitas ni suma puntos', async ({ page }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await page.goto('/scan?stand=stand-kawsay-salud');
   await expect(page.locator('.qr-paper svg')).toHaveCount(1);
@@ -131,7 +132,7 @@ test('mostrar y recargar el QR no registra visitas ni suma puntos', async ({ pag
 
 test('cancelar una confirmación QR de ejemplo no modifica el saldo local', async ({ page }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await page.goto('/scan');
   await page.getByText('Probar una visita de ejemplo', { exact: true }).click();
@@ -149,7 +150,7 @@ test('sin API y sin red: perfil guardado, mapa y pase QR siguen disponibles', as
   context,
 }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await page.evaluate(async () => {
     await navigator.serviceWorker.ready;
@@ -169,7 +170,7 @@ test('sin API y sin red: perfil guardado, mapa y pase QR siguen disponibles', as
 
 test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page }) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=2d');
@@ -194,7 +195,7 @@ test('planos originales 2D, planta y búsqueda entre pabellones', async ({ page 
 });
 test('las siete plantas mantienen contorno y cantidad de lotes en 2D y 3D', async ({ page }) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   for (const plan of PLAN_GEOMETRY) {
     await page.goto(`/map?plan=${plan.id}&view=3d`);
@@ -212,7 +213,7 @@ test('mapa y Check-in no abren lectores NFC ni acreditan una visita al mostrar Q
   page,
 }) => {
   const api = await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await page.goto('/map');
   await expect(page.locator('.indoor-viewer')).toHaveAttribute('data-mode', '2d');
@@ -231,7 +232,7 @@ test('mapa y Check-in no abren lectores NFC ni acreditan una visita al mostrar Q
 
 test('cámara interior, mismo pabellón en 2D y 3D y ayuda GPS', async ({ page }) => {
   await setup(page);
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await page.goto('/map?plan=red-lower&view=3d');
   await expect(page.locator('[data-campus-canvas]')).toHaveAttribute('data-plan-id', 'red-lower');
@@ -265,7 +266,7 @@ test('sin WebGL se activa el plano original 2D', async ({ page }) => {
       return type.startsWith('webgl') ? null : (context as any).call(this, type, ...args);
     } as any;
   });
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=3d');
@@ -293,7 +294,7 @@ async function gpsSetup(page: Page) {
       },
     });
   });
-  await page.goto('/');
+  await page.goto('/ferias/fipaz-2026');
   await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await page.goto('/map?plan=red-lower&view=2d');
@@ -351,7 +352,7 @@ test('GPS: permiso rechazado, cambio de planta y salida cancelan el watch', asyn
   await page.getByRole('button', { name: 'Iniciar GPS relativo', exact: true }).click();
   await gpsEmit(page);
   await page.getByRole('link', { name: 'Inicio', exact: true }).last().click();
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL('/ferias/fipaz-2026');
   await expect.poll(() => page.evaluate(() => (window as any).__gpsCleared.length)).toBe(3);
 });
 for (const width of [320, 390, 768, 1440])
@@ -360,7 +361,7 @@ for (const width of [320, 390, 768, 1440])
     page.on('pageerror', (e) => errors.push(e.message));
     await setup(page);
     await page.setViewportSize({ width, height: 844 });
-    await page.goto('/');
+    await page.goto('/ferias/fipaz-2026');
     await expect(page.getByRole('button', { name: 'Continuar con Google' })).toBeDisabled();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(
       true,
@@ -383,3 +384,7 @@ for (const width of [320, 390, 768, 1440])
       });
     expect(errors).toEqual([]);
   });
+
+multieventFlow('local', async (page) => {
+  await setup(page);
+});
