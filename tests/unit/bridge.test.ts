@@ -27,6 +27,47 @@ async function call(url: string, method = 'GET', body?: unknown, headers = {}) {
 }
 afterEach(() => vi.unstubAllGlobals());
 describe('Bridge de sesión y rutas permitidas', () => {
+  it('permite únicamente catálogo, progreso, POST de lectura y PUT de opinión del circuito visitante', async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({ success: true, data: {} })));
+    vi.stubGlobal('fetch', fetcher);
+    const event = 'e0000000-0000-4000-8000-000000000002';
+    const point = 'ea000000-0000-4000-8000-000000000001';
+    for (const [path, method] of [
+      ['/events/resolve/gamlp-puc-2026', 'GET'],
+      [`/events/${event}/experience-progress`, 'GET'],
+      [`/events/${event}/experiences/${point}/scans`, 'POST'],
+      [`/events/${event}/experiences/${point}/my-rating`, 'PUT'],
+    ])
+      expect(
+        (
+          await call('/api/backend?path=' + encodeURIComponent(path), method, {
+            requestKey: 'test',
+          })
+        ).statusCode,
+      ).toBe(200);
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(
+      (await call('/api/backend?path=' + encodeURIComponent(`/events/${event}/experience-metrics`)))
+        .statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await call(
+          '/api/backend?path=' +
+            encodeURIComponent(`/events/${event}/experiences/${point}/my-rating`),
+          'DELETE',
+        )
+      ).statusCode,
+    ).toBe(405);
+    expect(
+      (
+        await call(
+          '/api/backend?path=' + encodeURIComponent(`/events/${event}/experiences/${point}/scans`),
+          'GET',
+        )
+      ).statusCode,
+    ).toBe(405);
+  });
   it('permite crear un contacto comercial y bloquea lectura o eliminación desde visitantes', async () => {
     const fetcher = vi.fn(
       async () => new Response(JSON.stringify({ success: true, data: { id: 'lead-1' } })),

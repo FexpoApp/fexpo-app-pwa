@@ -2,7 +2,7 @@
 const COOKIE = 'fexpo_refresh';
 const refreshes = new Map();
 const allowed =
-  /^(?:\/events\/[\da-f-]{36}\/(?:stands|map|activities|leaderboard|me\/(?:gamification|points|visits|favorites|streak))|\/stands\/[\da-f-]{36}(?:\/(?:favorite|check-ins|dynamics|leads))?|\/activities\/[\da-f-]{36}\/register|\/me\/(?:qr|profile)|\/auth\/me)$/i;
+  /^(?:\/events\/resolve\/[a-z0-9]+(?:-[a-z0-9]+)*|\/events\/[\da-f-]{36}\/(?:stands|map|activities|leaderboard|experience-progress|experiences\/[\da-f-]{36}\/(?:scans|my-rating)|me\/(?:gamification|points|visits|favorites|streak))|\/stands\/[\da-f-]{36}(?:\/(?:favorite|check-ins|dynamics|leads))?|\/activities\/[\da-f-]{36}\/register|\/me\/(?:qr|profile)|\/auth\/me)$/i;
 const fail = (res, status, code, message) => {
   res.statusCode = status;
   res.end(JSON.stringify({ success: false, error: { code, message } }));
@@ -71,13 +71,19 @@ export async function bridge(req, res, options = process.env) {
       const route = path.split('?')[0];
       if (!allowed.test(route) || /[\\#]/.test(path))
         return fail(res, 404, 'NOT_FOUND', 'Ruta no disponible.');
-      const mutation = route.endsWith('/favorite')
-        ? ['POST', 'DELETE']
-        : route.endsWith('/check-ins') || route.endsWith('/register') || route.endsWith('/leads')
-          ? ['POST']
-          : route === '/me/profile'
-            ? ['GET', 'PATCH']
-            : ['GET'];
+      const mutation = /\/experiences\/[\da-f-]{36}\/scans$/i.test(route)
+        ? ['POST']
+        : /\/experiences\/[\da-f-]{36}\/my-rating$/i.test(route)
+          ? ['PUT']
+          : route.endsWith('/favorite')
+            ? ['POST', 'DELETE']
+            : route.endsWith('/check-ins') ||
+                route.endsWith('/register') ||
+                route.endsWith('/leads')
+              ? ['POST']
+              : route === '/me/profile'
+                ? ['GET', 'PATCH']
+                : ['GET'];
       if (!mutation.includes(method))
         return fail(res, 405, 'METHOD_NOT_ALLOWED', 'Método no permitido.');
       if (method !== 'GET') body = await bodyOf(req);
