@@ -91,7 +91,7 @@ export const useLive = create<LiveState>((update, read) => ({
       }
       const session = await loginGoogle(credential, deviceId);
       if (previous !== generation || !session.user) return;
-      await activate(session.user, previous, !accountOnly);
+      await activate({ ...session.user, authProvider: 'google' }, previous, !accountOnly);
     } catch (error) {
       if (previous === generation) update({ status: 'guest', ready: true });
       throw error;
@@ -220,9 +220,13 @@ export function bootstrapAccount() {
       }
       await refreshSession();
       const me = (
-        await request<{ id: string; profile: Omit<AuthUserDto, 'id'> }>('/auth/me', { auth: true })
+        await request<{
+          id: string;
+          authProvider?: AuthUserDto['authProvider'];
+          profile: Omit<AuthUserDto, 'id'>;
+        }>('/auth/me', { auth: true })
       ).data;
-      await activate({ id: me.id, ...me.profile }, previous, false);
+      await activate({ id: me.id, ...me.profile, authProvider: me.authProvider }, previous, false);
     } catch {
       if (previous === generation) useLive.setState({ ready: true, status: 'guest' });
     }
@@ -250,9 +254,13 @@ export async function bootstrap() {
   try {
     await refreshSession();
     const me = (
-      await request<{ id: string; profile: Omit<AuthUserDto, 'id'> }>('/auth/me', { auth: true })
+      await request<{
+        id: string;
+        authProvider?: AuthUserDto['authProvider'];
+        profile: Omit<AuthUserDto, 'id'>;
+      }>('/auth/me', { auth: true })
     ).data;
-    await activate({ id: me.id, ...me.profile }, previous);
+    await activate({ id: me.id, ...me.profile, authProvider: me.authProvider }, previous);
   } catch (error) {
     if (previous === generation)
       useLive.setState({

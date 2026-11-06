@@ -16,7 +16,7 @@ export function PucGoogleGate({
   const status = useLive((state) => state.status);
   const user = useLive((state) => state.user);
   const ready = useLive((state) => state.ready);
-  if (LIVE && status === 'signedIn' && user) return children;
+  if (LIVE && status === 'signedIn' && user?.authProvider === 'google') return children;
   return (
     <section className="puc-google-gate">
       <span className="puc-gate-symbol">

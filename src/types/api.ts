@@ -47,6 +47,68 @@ export interface AuthUserDto {
   id: string;
   displayName: string | null;
   avatarUrl: string | null;
+  authProvider?: 'google' | 'password';
+}
+
+export interface ExperienceDto {
+  id: string;
+  slug: string;
+  order: number;
+  name: string;
+  shortName: string;
+  type: 'carpa' | 'tunel' | 'domo';
+  description: string | null;
+  lots: string[];
+}
+export interface ResolvedEventDto {
+  id: string;
+  slug: string;
+  name: string;
+  status: string;
+  startsAt: string;
+  endsAt: string;
+  timezone: string;
+  experiences: ExperienceDto[];
+}
+export interface ExperienceSummaryDto {
+  totalExperiences: number;
+  scannedCount: number;
+  ratedCount: number;
+}
+export interface ExperienceRatingDto {
+  id: string;
+  eventId: string;
+  experienceId: string;
+  stars: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ExperienceProgressDto {
+  eventId: string;
+  progress: ExperienceSummaryDto;
+  experiences: (Omit<ExperienceDto, 'id' | 'description' | 'lots'> & {
+    experienceId: string;
+    scannedAt: string | null;
+    myRating: ExperienceRatingDto | null;
+    status: 'pending' | 'complete';
+  })[];
+}
+export interface ExperienceScanResultDto {
+  scan: {
+    experienceId: string;
+    source: 'camera' | 'image' | 'external-qr';
+    scanCount: number;
+    firstScannedAt: string;
+    lastScannedAt: string;
+  };
+  firstScan: boolean;
+  progress: ExperienceSummaryDto;
+}
+export interface ExperienceRatingResultDto {
+  rating: ExperienceRatingDto;
+  progress: ExperienceSummaryDto;
+  created: boolean;
 }
 
 export interface AuthResponse {

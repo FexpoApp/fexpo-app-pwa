@@ -125,7 +125,7 @@ export function GoogleLogin({
             {purpose === 'scanner'
               ? 'Inicia sesión para activar la cámara y abrir las calificaciones del recorrido.'
               : purpose === 'rating'
-                ? 'Inicia sesión una vez y comparte tu opinión en los cinco puntos. Conservaremos esta experiencia y tu borrador.'
+                ? 'Inicia sesión una vez y escanea el QR de cada lugar para compartir tu opinión. Conservaremos esta experiencia y tu borrador.'
                 : purpose === 'account'
                   ? 'Una cuenta para explorar tus ferias y participar.'
                   : 'Accede con Google para guardar visitas, puntos y favoritos.'}
