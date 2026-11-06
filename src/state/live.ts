@@ -63,7 +63,7 @@ interface LiveState extends PrivateData {
   error: string;
   progressError: string;
   syncing: boolean;
-  login: (credential: string) => Promise<void>;
+  login: (credential: string, accountOnly?: boolean) => Promise<void>;
   signOut: () => Promise<void>;
   favorite: (id: string) => Promise<void>;
   readNotices: () => void;
@@ -80,7 +80,7 @@ export const useLive = create<LiveState>((update, read) => ({
   error: '',
   progressError: '',
   syncing: false,
-  login: async (credential) => {
+  login: async (credential, accountOnly = false) => {
     const previous = ++generation;
     update({ ...empty(), status: 'loading', user: null });
     try {
@@ -91,7 +91,7 @@ export const useLive = create<LiveState>((update, read) => ({
       }
       const session = await loginGoogle(credential, deviceId);
       if (previous !== generation || !session.user) return;
-      await activate(session.user, previous);
+      await activate(session.user, previous, !accountOnly);
     } catch (error) {
       if (previous === generation) update({ status: 'guest', ready: true });
       throw error;
@@ -192,7 +192,12 @@ export function normalizeStand(s: StandDto): Stand {
     featured: s.featured,
   };
 }
-async function activate(user: AuthUserDto, previous: number) {
+async function activate(user: AuthUserDto, previous: number, withEvent = true) {
+  if (!withEvent) {
+    if (generation === previous)
+      useLive.setState({ ...empty(), user, ready: true, status: 'signedIn' });
+    return;
+  }
   const cached = await get<PrivateData>(`fexpo-account-v1:${EVENT_ID}:${user.id}`).catch(
     () => undefined,
   );
@@ -200,6 +205,33 @@ async function activate(user: AuthUserDto, previous: number) {
   useLive.setState({ ...empty(), ...cached, user, ready: true, status: 'signedIn' });
   await syncProgress();
   await flushPending();
+}
+let accountFlight: Promise<void> | null = null;
+/** Restore the shared identity without loading FIPAZ catalog, points or visit jobs. */
+export function bootstrapAccount() {
+  if (useLive.getState().status === 'signedIn') return Promise.resolve();
+  if (accountFlight) return accountFlight;
+  const previous = generation;
+  const work = (async () => {
+    try {
+      if (localStorage.getItem('fexpo-session-closed') === 'true') {
+        if (previous === generation) useLive.setState({ ready: true, status: 'guest' });
+        return;
+      }
+      await refreshSession();
+      const me = (
+        await request<{ id: string; profile: Omit<AuthUserDto, 'id'> }>('/auth/me', { auth: true })
+      ).data;
+      await activate({ id: me.id, ...me.profile }, previous, false);
+    } catch {
+      if (previous === generation) useLive.setState({ ready: true, status: 'guest' });
+    }
+  })();
+  accountFlight = work;
+  void work.finally(() => {
+    if (accountFlight === work) accountFlight = null;
+  });
+  return work;
 }
 export async function bootstrap() {
   if (booted) return;
