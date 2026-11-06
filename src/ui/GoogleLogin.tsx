@@ -53,7 +53,13 @@ export function loadGoogle() {
   });
   return loading;
 }
-export function GoogleLogin() {
+export function GoogleLogin({
+  purpose = 'passport',
+  compact = false,
+}: {
+  purpose?: 'passport' | 'rating' | 'account' | 'scanner';
+  compact?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
@@ -77,7 +83,7 @@ export function GoogleLogin() {
             setError('');
             void useLive
               .getState()
-              .login(response.credential)
+              .login(response.credential, purpose !== 'passport')
               .catch((e) => {
                 if (active) {
                   setError(message(e));
@@ -101,13 +107,37 @@ export function GoogleLogin() {
     return () => {
       active = false;
     };
-  }, [attempt]);
+  }, [attempt, purpose]);
   return (
-    <div className="card stack google-login">
-      <h3>Tu recorrido empieza aquí</h3>
-      <p>Accede con Google para guardar visitas, puntos y favoritos.</p>
+    <div className={compact ? 'google-login google-login-compact' : 'card stack google-login'}>
+      {!compact && (
+        <>
+          <h3>
+            {purpose === 'scanner'
+              ? 'Google es necesario para leer QR'
+              : purpose === 'rating'
+                ? 'Google es necesario para calificar'
+                : purpose === 'account'
+                  ? 'Tu cuenta FEXPO'
+                  : 'Tu recorrido empieza aquí'}
+          </h3>
+          <p>
+            {purpose === 'scanner'
+              ? 'Inicia sesión para activar la cámara y abrir las calificaciones del recorrido.'
+              : purpose === 'rating'
+                ? 'Inicia sesión una vez y comparte tu opinión en los cinco puntos. Conservaremos esta experiencia y tu borrador.'
+                : purpose === 'account'
+                  ? 'Una cuenta para explorar tus ferias y participar.'
+                  : 'Accede con Google para guardar visitas, puntos y favoritos.'}
+          </p>
+        </>
+      )}
       <div ref={ref} />
-      {busy && <p role="status">Abriendo tu pasaporte…</p>}
+      {busy && (
+        <p role="status">
+          {purpose === 'passport' ? 'Abriendo tu pasaporte…' : 'Conectando tu cuenta…'}
+        </p>
+      )}
       {error && (
         <>
           <p role="alert">{error}</p>
