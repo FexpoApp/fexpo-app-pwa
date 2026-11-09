@@ -947,22 +947,20 @@
   height: 100%;
   font-size: 12px;
 }
-.fipaz-event-switch {
+.fipaz-event-context {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   padding: 4px 16px;
   border-bottom: 1px solid var(--border);
   font-size: 10px;
   background: var(--surface);
 }
-.fipaz-event-switch a {
+.fipaz-event-context a {
   color: var(--ink);
   text-decoration: none;
   min-height: 32px;
   display: flex;
   align-items: center;
-  gap: 6px;
 }
 .fipaz-shell .compact-map {
   height: calc(100dvh - 157px - env(safe-area-inset-top) - env(safe-area-inset-bottom));

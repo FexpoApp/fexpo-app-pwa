@@ -63,6 +63,8 @@ test('entrada de prueba sin Google ni backend y perfil persistido', async ({ pag
   await enterTrial(page);
   await expect(page.locator('.bottom-nav')).toBeVisible();
   await expect(page.locator('.app-header .points-pill')).toHaveText('0');
+  const switchFair = page.getByRole('link', { name: 'Cambiar feria', exact: true });
+  await expect(switchFair).toBeHidden();
   await page.getByRole('link', { name: 'Perfil', exact: true }).last().click();
   await expect(page.getByText('Visitante de prueba', { exact: true })).toBeVisible();
   const saved = await page.evaluate(() => JSON.stringify(localStorage));
@@ -70,6 +72,9 @@ test('entrada de prueba sin Google ni backend y perfil persistido', async ({ pag
   expect(saved).not.toContain('accessToken');
   await page.reload();
   await expect(page.getByText('Visitante de prueba', { exact: true })).toBeVisible();
+  await switchFair.click();
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { name: 'Elige tu feria' })).toBeVisible();
   expect(api).toEqual([]);
 });
 test('Google queda como mock y cerrar la prueba devuelve a bienvenida', async ({ page }) => {

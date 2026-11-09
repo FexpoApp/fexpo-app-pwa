@@ -246,12 +246,8 @@ export function Shell() {
             <QrCode size={22} />
           </Link>
         </header>
-        <div className="fipaz-event-switch">
+        <div className="fipaz-event-context">
           <Link to={FIPAZ_HOME}>FIPAZ 2026</Link>
-          <Link to="/">
-            <ArrowUpRight size={14} />
-            Cambiar feria
-          </Link>
         </div>
         {!online && (
           <div className="offline-banner" role="status">

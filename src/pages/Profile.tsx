@@ -5,6 +5,7 @@ import { LiveProfile } from './LiveAccount';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  ArrowLeftRight,
   Bell,
   Check,
   ChevronRight,
@@ -266,5 +267,13 @@ function DemoProfilePage() {
 }
 
 export function ProfilePage() {
-  return LIVE ? <LiveProfile /> : LOCAL ? <LocalProfile /> : <DemoProfilePage />;
+  return (
+    <div className="stack">
+      {LIVE ? <LiveProfile /> : LOCAL ? <LocalProfile /> : <DemoProfilePage />}
+      <Link to="/" className="button ghost">
+        <ArrowLeftRight size={17} aria-hidden="true" />
+        Cambiar feria
+      </Link>
+    </div>
+  );
 }
