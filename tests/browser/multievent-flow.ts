@@ -344,9 +344,11 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Elige tu feria' })).toBeVisible();
     const cards = page.locator('.fair-event-card');
-    await expect(cards).toHaveCount(1);
-    await expect(cards).toContainText('Feria GAMLP');
-    await expect(page.locator('.fair-cards')).not.toContainText('FIPAZ');
+    await expect(cards).toHaveCount(2);
+    await expect(cards.first()).toContainText('Feria GAMLP');
+    const fipaz = cards.filter({ hasText: 'FIPAZ 2026' });
+    await expect(fipaz.getByText('Finalizado', { exact: true })).toBeVisible();
+    await expect(fipaz).toHaveAttribute('href', '/ferias/fipaz-2026');
     await cards.nth(0).click();
     await expect(page).toHaveURL(base);
     await expect(page.locator('.puc-hero')).toBeVisible();

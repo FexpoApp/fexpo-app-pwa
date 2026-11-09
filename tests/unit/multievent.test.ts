@@ -13,8 +13,11 @@ import {
 } from '@/features/events/catalog';
 import { PUC_LOTS, PUC_LOT_EXPERIENCES, PUC_DOME } from '@/features/events/geometry';
 describe('GAMLP PUC: recorrido acordado y destinos QR', () => {
-  it('publica únicamente GAMLP y siete destinos HTTPS sin generar nuevos codigos', () => {
-    expect(FAIRS.map((f) => f.slug)).toEqual(['gamlp-puc-2026']);
+  it('publica GAMLP, FIPAZ finalizado y siete destinos HTTPS para GAMLP', () => {
+    expect(FAIRS.map((f) => [f.slug, f.status])).toEqual([
+      ['gamlp-puc-2026', null],
+      ['fipaz-2026', 'Finalizado'],
+    ]);
     for (const point of PUC_QR_DESTINATIONS) {
       const url = new URL(pucPrintedQrUrl(point.slug)!);
       expect(url.origin).toBe('https://app.fexpo.lat');

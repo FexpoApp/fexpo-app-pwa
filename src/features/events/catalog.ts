@@ -9,6 +9,15 @@ export const FAIRS = [
     venue: 'Parque Urbano Central',
     organizer: 'Secretaría Municipal de Ciudad Productiva',
     path: PUC_BASE,
+    status: null,
+  },
+  {
+    slug: 'fipaz-2026',
+    name: 'FIPAZ 2026',
+    venue: 'Campo Ferial Chuquiago Marka',
+    organizer: 'Feria Internacional de La Paz',
+    path: FIPAZ_HOME,
+    status: 'Finalizado',
   },
 ] as const;
 export interface PucExperience {

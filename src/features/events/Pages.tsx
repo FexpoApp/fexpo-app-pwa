@@ -75,7 +75,10 @@ export function FairSelectionPage() {
                   ? 'CIUDAD PRODUCTIVA'
                   : 'FERIA INTERNACIONAL DE LA PAZ'}
               </span>
-              <h2>{fair.name}</h2>
+              <div className="fair-card-title">
+                <h2>{fair.name}</h2>
+                {fair.status && <span className="fair-card-status">{fair.status}</span>}
+              </div>
               <p>
                 <MapPin size={14} />
                 {fair.venue}
@@ -96,7 +99,7 @@ export function FairSelectionPage() {
               </div>
             )}
             <span className="fair-card-action">
-              Explorar feria
+              {fair.status ? 'Ver edición' : 'Explorar feria'}
               <ArrowRight size={18} />
             </span>
           </Link>
