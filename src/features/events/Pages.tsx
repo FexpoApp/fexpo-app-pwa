@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   ArrowRight,
@@ -9,7 +9,8 @@ import {
   ScanLine,
   ChevronRight,
   LogOut,
-  CalendarDays,
+  Search,
+  X,
   Check,
   Download,
   ArrowLeftRight,
@@ -32,6 +33,14 @@ import { usePucServer, syncPucProgress } from './server';
 
 export function FairSelectionPage() {
   const [query, setQuery] = useState('');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchButton = useRef<HTMLButtonElement>(null);
+
+  function toggleSearch() {
+    if (searchOpen) setQuery('');
+    setSearchOpen(!searchOpen);
+  }
+
   const items = FAIRS.filter((fair) =>
     `${fair.name} ${fair.venue} ${fair.organizer}`
       .normalize('NFD')
@@ -47,21 +56,41 @@ export function FairSelectionPage() {
   return (
     <section className="fair-selection">
       <div className="fair-page-heading">
-        <div>
-          <span className="eyebrow">LA PAZ · BOLIVIA</span>
-          <h1>Elige tu feria</h1>
-        </div>
-        <CalendarDays size={26} />
+        <h1>Elige tu feria</h1>
+        <button
+          ref={searchButton}
+          type="button"
+          className="icon-button"
+          aria-label={searchOpen ? 'Cerrar búsqueda' : 'Buscar ferias'}
+          aria-expanded={searchOpen}
+          aria-controls="fair-search"
+          onClick={toggleSearch}
+        >
+          {searchOpen ? <X size={21} aria-hidden="true" /> : <Search size={21} aria-hidden="true" />}
+        </button>
       </div>
-      <label className="search-field">
-        <MapPin size={17} />
-        <input
-          aria-label="Buscar una feria"
-          placeholder="Buscar una feria"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-        />
-      </label>
+      <div id="fair-search" hidden={!searchOpen}>
+        {searchOpen && (
+          <label className="search-field">
+            <Search size={17} aria-hidden="true" />
+            <input
+              type="search"
+              aria-label="Buscar una feria"
+              placeholder="Buscar una feria"
+              value={query}
+              autoFocus
+              onChange={(event) => setQuery(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  toggleSearch();
+                  searchButton.current?.focus();
+                }
+              }}
+            />
+          </label>
+        )}
+      </div>
       <div className="fair-cards">
         {items.map((fair) => (
           <Link

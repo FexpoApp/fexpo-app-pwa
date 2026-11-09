@@ -349,6 +349,18 @@ export function multieventFlow(mode: 'local' | 'demo' | 'live', prepare: Prepare
     const fipaz = cards.filter({ hasText: 'FIPAZ 2026' });
     await expect(fipaz.getByText('Finalizado', { exact: true })).toBeVisible();
     await expect(fipaz).toHaveAttribute('href', '/ferias/fipaz-2026');
+    const searchToggle = page.getByRole('button', { name: 'Buscar ferias' });
+    const search = page.getByRole('searchbox', { name: 'Buscar una feria' });
+    await expect(search).toBeHidden();
+    await searchToggle.click();
+    await expect(search).toBeFocused();
+    await search.fill('chuquiago');
+    await expect(cards).toHaveCount(1);
+    await expect(fipaz).toBeVisible();
+    await search.press('Escape');
+    await expect(search).toBeHidden();
+    await expect(searchToggle).toBeFocused();
+    await expect(cards).toHaveCount(2);
     await cards.nth(0).click();
     await expect(page).toHaveURL(base);
     await expect(page.locator('.puc-hero')).toBeVisible();

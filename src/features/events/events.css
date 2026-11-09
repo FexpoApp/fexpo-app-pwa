@@ -76,18 +76,22 @@
 .fair-page-heading h1 {
   margin-bottom: 0;
 }
-.fair-page-heading .eyebrow {
-  font-size: 9px;
-  display: block;
-  margin-bottom: 6px;
-}
 .fair-page-heading p {
   font-size: 12px;
   margin: 5px 0 0;
   color: var(--muted);
 }
-.fair-selection > .search-field {
-  margin-bottom: 15px;
+.fair-selection .fair-page-heading {
+  margin-bottom: 8px;
+}
+.fair-selection h1 {
+  font-size: 19px;
+}
+.fair-selection .search-field {
+  margin-bottom: 10px;
+}
+.fair-selection .search-field input {
+  font-size: 16px;
 }
 .fair-cards {
   display: flex;
